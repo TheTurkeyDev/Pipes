@@ -1,0 +1,178 @@
+{
+    "multipart": [
+        {
+            "when": {
+                "north": "none"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_none"
+            }
+        },
+        {
+            "when": {
+                "north": "pipe"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_connect"
+            }
+        },
+        {
+            "when": {
+                "north": "inventory"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_inventory"
+            }
+        },
+        {
+            "when": {
+                "south": "none"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_none",
+                "y": 180,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "south": "pipe"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_connect",
+                "y": 180,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "south": "inventory"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_inventory",
+                "y": 180,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "west": "none"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_none",
+                "y": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "west": "pipe"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_connect",
+                "y": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "west": "inventory"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_inventory",
+                "y": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "east": "none"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_none",
+                "y": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "east": "pipe"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_connect",
+                "y": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "east": "inventory"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_inventory",
+                "y": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "up": "none"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_none",
+                "x": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "up": "pipe"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_connect",
+                "x": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "up": "inventory"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_inventory",
+                "x": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "down": "none"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_none",
+                "x": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "down": "pipe"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_connect",
+                "x": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "down": "inventory"
+            },
+            "apply": {
+                "model": "pipes:item_pipe_inventory",
+                "x": 90,
+                "uvlock": true
+            }
+        }
+    ]
+}
