@@ -20,6 +20,7 @@ public class GameListener
 		if(event.side == Side.SERVER && event.type == Type.SERVER && event.phase == Phase.START)
 		{
 			tick++;
+			PipeNetworkManager.ITEM_NETWORK.tick();
 			if(tick % FORWARDING_TABLE_INTERVAL == 0)
 				PipeNetworkManager.ITEM_NETWORK.purgeForwardingTable();
 		}

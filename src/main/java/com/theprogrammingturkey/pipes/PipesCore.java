@@ -2,7 +2,6 @@ package com.theprogrammingturkey.pipes;
 
 import org.apache.logging.log4j.Logger;
 
-import com.theprogrammingturkey.pipes.listener.BlockListener;
 import com.theprogrammingturkey.pipes.listener.GameListener;
 import com.theprogrammingturkey.pipes.listener.WorldListener;
 import com.theprogrammingturkey.pipes.util.RegistryHelper;
@@ -37,7 +36,6 @@ public class PipesCore
 	{
 		logger = event.getModLog();
 		MinecraftForge.EVENT_BUS.register(new RegistryHelper());
-		MinecraftForge.EVENT_BUS.register(new BlockListener());
 		MinecraftForge.EVENT_BUS.register(new GameListener());
 		MinecraftForge.EVENT_BUS.register(new WorldListener());
 	}

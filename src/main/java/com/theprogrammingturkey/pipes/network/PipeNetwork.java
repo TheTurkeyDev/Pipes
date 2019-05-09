@@ -3,17 +3,32 @@ package com.theprogrammingturkey.pipes.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.interfacing.INetworkInterface;
+import com.theprogrammingturkey.pipes.network.interfacing.ItemInterface;
+
 import net.minecraft.util.math.BlockPos;
 
 public class PipeNetwork
 {
 	private boolean isActive = true;
 	private int networkID;
-	private List<Long> containedBlockPos = new ArrayList<Long>();
+	private List<Long> containedBlockPos = new ArrayList<>();
 
-	public PipeNetwork(int networkID)
+	private NetworkType type;
+
+	private INetworkInterface netInterface;
+
+	public PipeNetwork(int networkID, NetworkType type)
 	{
 		this.networkID = networkID;
+		this.type = type;
+		this.netInterface = PipeNetwork.getNewInterface(type);
+	}
+
+	public void tick()
+	{
+		netInterface.processTransfers();
 	}
 
 	public void addBlockPosToNetwork(BlockPos pos)
@@ -55,5 +70,21 @@ public class PipeNetwork
 	public boolean isActive()
 	{
 		return isActive;
+	}
+
+	public INetworkInterface getNetworkInterface()
+	{
+		return this.netInterface;
+	}
+
+	private static INetworkInterface getNewInterface(NetworkType type)
+	{
+		switch(type)
+		{
+			case ITEM:
+				return new ItemInterface();
+			default:
+				return new ItemInterface();
+		}
 	}
 }

@@ -18,12 +18,25 @@ import net.minecraft.world.World;
 
 public class PipeNetworkManager
 {
-	public static final PipeNetworkManager ITEM_NETWORK = new PipeNetworkManager();
+	public static final PipeNetworkManager ITEM_NETWORK = new PipeNetworkManager(NetworkType.ITEM);
 
 	public int nextID = 0;
 	public Map<Integer, PipeNetwork> networks = new HashMap<Integer, PipeNetwork>();
 	public Map<Long, Integer> posToNetworkID = new HashMap<Long, Integer>();
 	public Map<Integer, Integer> idForwardingTable = new HashMap<Integer, Integer>();
+
+	private NetworkType type;
+
+	public PipeNetworkManager(NetworkType type)
+	{
+		this.type = type;
+	}
+
+	public void tick()
+	{
+		for(PipeNetwork network : networks.values())
+			network.tick();
+	}
 
 	public void addPipeToNetwork(World world, BlockPos pos)
 	{
@@ -42,7 +55,7 @@ public class PipeNetworkManager
 
 		if(adjacentNetworks.size() == 0)
 		{
-			PipeNetwork newNetwork = new PipeNetwork(nextID++);
+			PipeNetwork newNetwork = new PipeNetwork(nextID++, type);
 			networks.put(newNetwork.getNetworkID(), newNetwork);
 			addPosToNetwork(newNetwork, pos);
 		}
@@ -104,7 +117,7 @@ public class PipeNetworkManager
 			{
 				if(!firstTry)
 				{
-					newNetwork = new PipeNetwork(nextID++);
+					newNetwork = new PipeNetwork(nextID++, type);
 					networks.put(newNetwork.getNetworkID(), newNetwork);
 				}
 				BlockPos startPos = adjecentPipes.remove(0);
@@ -216,5 +229,10 @@ public class PipeNetworkManager
 		for(Entry<Long, Integer> blockpos : posToNetworkID.entrySet())
 			blockpos.setValue(getNetworkID(BlockPos.fromLong(blockpos.getKey())));
 		idForwardingTable.clear();
+	}
+
+	public enum NetworkType
+	{
+		ITEM, FLUID, ENERGY;
 	}
 }

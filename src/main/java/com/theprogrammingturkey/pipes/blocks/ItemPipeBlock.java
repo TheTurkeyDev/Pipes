@@ -1,5 +1,6 @@
 package com.theprogrammingturkey.pipes.blocks;
 
+import com.theprogrammingturkey.pipes.network.PipeNetwork;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 import com.theprogrammingturkey.pipes.util.RegistryHelper;
 
@@ -49,5 +50,21 @@ public class ItemPipeBlock extends BasePipeBlock
 	{
 		if(!world.isRemote)
 			PipeNetworkManager.ITEM_NETWORK.addPipeToNetwork(world, pos);
+	}
+
+	public void onNeighborChange(IBlockAccess access, BlockPos pos, BlockPos neighbor)
+	{
+		if(!(access instanceof World))
+			return;
+		World world = (World) access;
+		if(world.isRemote)
+			return;
+
+		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
+		PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
+		if(network != null)
+			network.getNetworkInterface().removeInterfacedBlock(world, neighbor, side);
+		if(network != null)
+			network.getNetworkInterface().addInterfacedBlock(world, neighbor, side);
 	}
 }
