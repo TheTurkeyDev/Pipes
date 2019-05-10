@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Level;
 import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.util.RegistryHelper;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -19,6 +20,7 @@ import net.minecraft.world.World;
 public class PipeNetworkManager
 {
 	public static final PipeNetworkManager ITEM_NETWORK = new PipeNetworkManager(NetworkType.ITEM);
+	public static final PipeNetworkManager FLUID_NETWORK = new PipeNetworkManager(NetworkType.FLUID);
 
 	public int nextID = 0;
 	public Map<Integer, PipeNetwork> networks = new HashMap<Integer, PipeNetwork>();
@@ -56,7 +58,7 @@ public class PipeNetworkManager
 		{
 			BlockPos offset = pos.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(neighbor.getBlock().equals(RegistryHelper.ITEM_PIPE))
+			if(areBlockAndTypeEqual(neighbor.getBlock()))
 			{
 				PipeNetwork network = getNetwork(offset);
 				if(network != null)
@@ -91,6 +93,15 @@ public class PipeNetworkManager
 		}
 	}
 
+	public boolean areBlockAndTypeEqual(Block block)
+	{
+		if(type == NetworkType.ITEM)
+			return block.equals(RegistryHelper.ITEM_PIPE);
+		else if(type == NetworkType.FLUID)
+			return block.equals(RegistryHelper.FLUID_PIPE);
+		return false;
+	}
+
 	public void addPosToNetwork(PipeNetwork network, BlockPos pos)
 	{
 		network.addBlockPosToNetwork(pos);
@@ -107,7 +118,7 @@ public class PipeNetworkManager
 		{
 			BlockPos offset = pos.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(neighbor.getBlock().equals(RegistryHelper.ITEM_PIPE))
+			if(areBlockAndTypeEqual(neighbor.getBlock()))
 				adjecentPipes.add(offset);
 		}
 
@@ -170,7 +181,7 @@ public class PipeNetworkManager
 							}
 						}
 						IBlockState neighbor = world.getBlockState(offset);
-						if(neighbor.getBlock().equals(RegistryHelper.ITEM_PIPE))
+						if(areBlockAndTypeEqual(neighbor.getBlock()))
 						{
 							float distPts = 0f;
 							for(BlockPos goalPos : adjecentPipes)

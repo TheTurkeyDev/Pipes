@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.interfacing.FluidInterface;
 import com.theprogrammingturkey.pipes.network.interfacing.INetworkInterface;
 import com.theprogrammingturkey.pipes.network.interfacing.ItemInterface;
 
@@ -33,6 +34,7 @@ public class PipeNetwork
 			this.isActive = false;
 			return;
 		}
+		netInterface.tick();
 		netInterface.processTransfers();
 	}
 
@@ -89,6 +91,8 @@ public class PipeNetwork
 		{
 			case ITEM:
 				return new ItemInterface();
+			case FLUID:
+				return new FluidInterface();
 			default:
 				return new ItemInterface();
 		}

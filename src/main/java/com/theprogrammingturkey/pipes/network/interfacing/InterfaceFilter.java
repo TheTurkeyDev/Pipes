@@ -10,34 +10,60 @@ import net.minecraft.util.EnumFacing;
 
 public class InterfaceFilter
 {
-	public TransferType transferType = TransferType.BOTH;
-	public boolean isWhiteList = false;
-	public int inputPriority = 0;
-	public int outputPriority = 0;
-	private List<FilterStack> filterStacks = new ArrayList<>();
+	public DirectionFilter inputFilter = new DirectionFilter();
+	public DirectionFilter outputFilter = new DirectionFilter();
+
 	public EnumFacing facing = EnumFacing.NORTH;
 
-	public enum TransferType
+	public boolean hasStackInFilter(boolean input, FilterStack stack)
 	{
-		INPUT, OUTPUT, BOTH;
+		if(input)
+			return inputFilter.hasStackInFilter(stack);
+		return outputFilter.hasStackInFilter(stack);
 	}
 
-	public boolean hasStackInFilter(FilterStack stack)
+	public void addStackToFilter(boolean input, FilterStack stack)
 	{
-		for(FilterStack s : filterStacks)
-			if(ItemStackHelper.areFilterStacksEqual(stack, s))
-				return true;
-		return false;
+		if(input)
+			inputFilter.addStackToFilter(stack);
+		else
+			outputFilter.addStackToFilter(stack);
 	}
 
-	public void addStackToFilter(FilterStack stack)
+	public List<FilterStack> getStacks(boolean input)
 	{
-		if(!hasStackInFilter(stack))
-			filterStacks.add(stack);
+		return input ? inputFilter.getStacks() : outputFilter.getStacks();
 	}
 
-	public List<FilterStack> getStacks()
+	public boolean isWhiteList(boolean input)
 	{
-		return this.filterStacks;
+		return input ? inputFilter.isWhiteList : outputFilter.isWhiteList;
+	}
+
+	public static class DirectionFilter
+	{
+		public boolean isWhiteList = false;
+		public int priority = 0;
+		public boolean enabled = true;
+		private List<FilterStack> filterStacks = new ArrayList<>();
+
+		public boolean hasStackInFilter(FilterStack stack)
+		{
+			for(FilterStack s : filterStacks)
+				if(ItemStackHelper.areFilterStacksEqual(stack, s))
+					return true;
+			return false;
+		}
+
+		public void addStackToFilter(FilterStack stack)
+		{
+			if(!hasStackInFilter(stack))
+				filterStacks.add(stack);
+		}
+
+		public List<FilterStack> getStacks()
+		{
+			return this.filterStacks;
+		}
 	}
 }

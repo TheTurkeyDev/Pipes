@@ -12,6 +12,10 @@ public interface INetworkInterface
 	public static final long FACING_BIT_SHIFT = 60 - MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(30000000));
 	public static final long FACING_MASK = (1L << FACING_NUM_BITS) - 1L;
 	
+	public void tick();
+	
+	public void addInterfacedBlock(World world, BlockPos block, EnumFacing facing);
+	
 	public void updateInterfacedBlock(World world, BlockPos block, EnumFacing facing);
 
 	public void removeInterfacedBlock(World world, BlockPos block, EnumFacing facing);

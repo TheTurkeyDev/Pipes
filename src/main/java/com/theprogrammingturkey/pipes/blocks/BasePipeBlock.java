@@ -1,7 +1,10 @@
 package com.theprogrammingturkey.pipes.blocks;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import com.theprogrammingturkey.pipes.PipesCore;
 
@@ -11,14 +14,13 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BasePipeBlock extends Block
 {
@@ -31,27 +33,16 @@ public class BasePipeBlock extends Block
 
 	public static final AxisAlignedBB BASE_AABB = new AxisAlignedBB(0.4375, 0.4375, 0.4375, 0.5625, 0.5625, 0.5625);
 
-	public static final Map<EnumFacing, PropertyEnum<EnumAttachType>> FACING_MAPPING = new HashMap<EnumFacing, PropertyEnum<EnumAttachType>>()
+	@SuppressWarnings("serial")
+	public static final Map<EnumFacing, CustomFacingHolder> FACING_MAPPING = new HashMap<EnumFacing, CustomFacingHolder>()
 	{
 		{
-			put(EnumFacing.NORTH, NORTH);
-			put(EnumFacing.EAST, EAST);
-			put(EnumFacing.SOUTH, SOUTH);
-			put(EnumFacing.WEST, WEST);
-			put(EnumFacing.UP, UP);
-			put(EnumFacing.DOWN, DOWN);
-		}
-	};
-
-	public static final Map<EnumFacing, AxisAlignedBB> FACING_TO_AABB_MAPPING = new HashMap<EnumFacing, AxisAlignedBB>()
-	{
-		{
-			put(EnumFacing.NORTH, new AxisAlignedBB(0.4375, 0.4375, 0, 0.5625, 0.5625, 0.5));
-			put(EnumFacing.EAST, new AxisAlignedBB(0.5, 0.4375, 0.4375, 1, 0.5625, 0.5625));
-			put(EnumFacing.SOUTH, new AxisAlignedBB(0.4375, 0.4375, 0.5, 0.5625, 0.5625, 1));
-			put(EnumFacing.WEST, new AxisAlignedBB(0, 0.4375, 0.4375, 0.5, 0.5625, 0.5625));
-			put(EnumFacing.UP, new AxisAlignedBB(0.4375, 0.5, 0.4375, 0.5625, 1, 0.5625));
-			put(EnumFacing.DOWN, new AxisAlignedBB(0.4375, 0, 0.4375, 0.5625, 0.5, 0.5625));
+			put(EnumFacing.NORTH, new CustomFacingHolder(NORTH, new AxisAlignedBB(0.4375, 0.4375, 0, 0.5625, 0.5625, 0.5)));
+			put(EnumFacing.EAST, new CustomFacingHolder(EAST, new AxisAlignedBB(0.5, 0.4375, 0.4375, 1, 0.5625, 0.5625)));
+			put(EnumFacing.SOUTH, new CustomFacingHolder(SOUTH, new AxisAlignedBB(0.4375, 0.4375, 0.5, 0.5625, 0.5625, 1)));
+			put(EnumFacing.WEST, new CustomFacingHolder(WEST, new AxisAlignedBB(0, 0.4375, 0.4375, 0.5, 0.5625, 0.5625)));
+			put(EnumFacing.UP, new CustomFacingHolder(UP, new AxisAlignedBB(0.4375, 0.5, 0.4375, 0.5625, 1, 0.5625)));
+			put(EnumFacing.DOWN, new CustomFacingHolder(DOWN, new AxisAlignedBB(0.4375, 0, 0.4375, 0.5625, 0.5, 0.5625)));
 		}
 	};
 
@@ -73,24 +64,22 @@ public class BasePipeBlock extends Block
 		return this.blockName;
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public AxisAlignedBB getSelectedBoundingBox(IBlockState state, World world, BlockPos pos)
-	{
-		AxisAlignedBB box = BASE_AABB.offset(pos);
-		for(EnumFacing side : EnumFacing.VALUES)
-			if(state.getActualState(world, pos).getValue(FACING_MAPPING.get(side)).isSegment())
-				box = box.union(FACING_TO_AABB_MAPPING.get(side).offset(pos));
-		return box;
-	}
-
 	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess world, BlockPos pos)
 	{
 		AxisAlignedBB box = BASE_AABB;
 		for(EnumFacing side : EnumFacing.VALUES)
-			if(state.getActualState(world, pos).getValue(FACING_MAPPING.get(side)).isSegment())
-				box = box.union(FACING_TO_AABB_MAPPING.get(side));
+			if(state.getActualState(world, pos).getValue(FACING_MAPPING.get(side).direction).isSegment())
+				box = box.union(FACING_MAPPING.get(side).boundingBox);
 		return box;
+	}
+
+	@SuppressWarnings("deprecation")
+	public void addCollisionBoxToList(IBlockState state, World world, BlockPos pos, AxisAlignedBB entityBox, List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean isActualState)
+	{
+		addCollisionBoxToList(pos, entityBox, collidingBoxes, BASE_AABB);
+		for(EnumFacing side : EnumFacing.VALUES)
+			if(state.getActualState(world, pos).getValue(FACING_MAPPING.get(side).direction).isSegment())
+				addCollisionBoxToList(pos, entityBox, collidingBoxes, FACING_MAPPING.get(side).boundingBox);
 	}
 
 	public int getMetaFromState(IBlockState state)
@@ -140,5 +129,18 @@ public class BasePipeBlock extends Block
 		{
 			return this == PIPE || this == INVENTORY;
 		}
+	}
+
+	public static class CustomFacingHolder
+	{
+		public PropertyEnum<EnumAttachType> direction;
+		public AxisAlignedBB boundingBox;
+
+		public CustomFacingHolder(PropertyEnum<EnumAttachType> direction, AxisAlignedBB boundingBox)
+		{
+			this.direction = direction;
+			this.boundingBox = boundingBox;
+		}
+
 	}
 }

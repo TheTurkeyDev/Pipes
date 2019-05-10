@@ -14,9 +14,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
-public class ItemPipeBlock extends BasePipeBlock
+public class FluidPipeBlock extends BasePipeBlock
 {
-	public ItemPipeBlock()
+	public FluidPipeBlock()
 	{
 		super("item_pipe");
 		this.setDefaultState(this.blockState.getBaseState().withProperty(NORTH, EnumAttachType.NONE).withProperty(EAST, EnumAttachType.NONE).withProperty(SOUTH, EnumAttachType.NONE).withProperty(WEST, EnumAttachType.NONE).withProperty(UP, EnumAttachType.NONE).withProperty(DOWN, EnumAttachType.NONE));
@@ -29,7 +29,7 @@ public class ItemPipeBlock extends BasePipeBlock
 		{
 			BlockPos offset = origin.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(neighbor.getBlock().equals(RegistryHelper.ITEM_PIPE))
+			if(neighbor.getBlock().equals(RegistryHelper.FLUID_PIPE))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
 			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset) instanceof IInventory)
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);
@@ -42,12 +42,12 @@ public class ItemPipeBlock extends BasePipeBlock
 	{
 		if(!world.isRemote)
 		{
-			PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
+			PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
 			if(network != null)
 				for(EnumFacing side : EnumFacing.VALUES)
 					network.getNetworkInterface().removeInterfacedBlock(world, pos.offset(side), side.getOpposite());
 
-			PipeNetworkManager.ITEM_NETWORK.removePipeFromNetwork(world, pos);
+			PipeNetworkManager.FLUID_NETWORK.removePipeFromNetwork(world, pos);
 		}
 		return super.removedByPlayer(state, world, pos, player, willHarvest);
 	}
@@ -57,7 +57,7 @@ public class ItemPipeBlock extends BasePipeBlock
 	{
 		if(!world.isRemote)
 		{
-			PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.addPipeToNetwork(world, pos);
+			PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.addPipeToNetwork(world, pos);
 			for(EnumFacing side : EnumFacing.VALUES)
 				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite());
 		}
@@ -72,7 +72,7 @@ public class ItemPipeBlock extends BasePipeBlock
 			return;
 
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
-		PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
+		PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
 		if(network != null)
 			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side);
 	}
