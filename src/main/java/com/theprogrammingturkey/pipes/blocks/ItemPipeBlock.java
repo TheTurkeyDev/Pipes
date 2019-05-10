@@ -41,7 +41,14 @@ public class ItemPipeBlock extends BasePipeBlock
 	public boolean removedByPlayer(IBlockState state, World world, BlockPos pos, EntityPlayer player, boolean willHarvest)
 	{
 		if(!world.isRemote)
+		{
+			PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
+			if(network != null)
+				for(EnumFacing side : EnumFacing.VALUES)
+					network.getNetworkInterface().removeInterfacedBlock(world, pos.offset(side), side);
+
 			PipeNetworkManager.ITEM_NETWORK.removePipeFromNetwork(world, pos);
+		}
 		return super.removedByPlayer(state, world, pos, player, willHarvest);
 	}
 
@@ -49,7 +56,11 @@ public class ItemPipeBlock extends BasePipeBlock
 	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
 	{
 		if(!world.isRemote)
-			PipeNetworkManager.ITEM_NETWORK.addPipeToNetwork(world, pos);
+		{
+			PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.addPipeToNetwork(world, pos);
+			for(EnumFacing side : EnumFacing.VALUES)
+				network.getNetworkInterface().updateInterfacedBlock(world, pos.offset(side), side);
+		}
 	}
 
 	public void onNeighborChange(IBlockAccess access, BlockPos pos, BlockPos neighbor)
@@ -63,8 +74,6 @@ public class ItemPipeBlock extends BasePipeBlock
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
 		PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
 		if(network != null)
-			network.getNetworkInterface().removeInterfacedBlock(world, neighbor, side);
-		if(network != null)
-			network.getNetworkInterface().addInterfacedBlock(world, neighbor, side);
+			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side);
 	}
 }

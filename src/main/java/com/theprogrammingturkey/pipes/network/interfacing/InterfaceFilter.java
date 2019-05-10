@@ -11,7 +11,7 @@ import net.minecraft.util.EnumFacing;
 public class InterfaceFilter
 {
 	public TransferType transferType = TransferType.BOTH;
-	public boolean isWhiteList = true;
+	public boolean isWhiteList = false;
 	public int inputPriority = 0;
 	public int outputPriority = 0;
 	private List<FilterStack> filterStacks = new ArrayList<>();

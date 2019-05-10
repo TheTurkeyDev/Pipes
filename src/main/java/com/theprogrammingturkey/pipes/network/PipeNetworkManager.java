@@ -34,11 +34,22 @@ public class PipeNetworkManager
 
 	public void tick()
 	{
-		for(PipeNetwork network : networks.values())
-			network.tick();
+		List<Integer> deadNetworks = new ArrayList<>();
+		for(Entry<Integer, PipeNetwork> network : networks.entrySet())
+		{
+			if(network.getValue().isActive())
+				network.getValue().tick();
+			else
+				deadNetworks.add(network.getKey());
+		}
+
+		for(Integer i : deadNetworks)
+			networks.remove(i);
+
+		deadNetworks.clear();
 	}
 
-	public void addPipeToNetwork(World world, BlockPos pos)
+	public PipeNetwork addPipeToNetwork(World world, BlockPos pos)
 	{
 		List<PipeNetwork> adjacentNetworks = new ArrayList<>();
 		for(EnumFacing side : EnumFacing.VALUES)
@@ -58,10 +69,12 @@ public class PipeNetworkManager
 			PipeNetwork newNetwork = new PipeNetwork(nextID++, type);
 			networks.put(newNetwork.getNetworkID(), newNetwork);
 			addPosToNetwork(newNetwork, pos);
+			return newNetwork;
 		}
 		else if(adjacentNetworks.size() == 1)
 		{
 			addPosToNetwork(adjacentNetworks.get(0), pos);
+			return adjacentNetworks.get(0);
 		}
 		else
 		{
@@ -74,6 +87,7 @@ public class PipeNetworkManager
 			}
 
 			addPosToNetwork(firstNetwork, pos);
+			return firstNetwork;
 		}
 	}
 

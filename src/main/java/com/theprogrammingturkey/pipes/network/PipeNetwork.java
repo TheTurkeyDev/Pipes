@@ -28,6 +28,11 @@ public class PipeNetwork
 
 	public void tick()
 	{
+		if(containedBlockPos.size() == 0)
+		{
+			this.isActive = false;
+			return;
+		}
 		netInterface.processTransfers();
 	}
 
@@ -58,7 +63,8 @@ public class PipeNetwork
 
 	public void mergeWithNetwork(PipeNetwork toMerge)
 	{
-		this.containedBlockPos.addAll(containedBlockPos);
+		this.containedBlockPos.addAll(toMerge.containedBlockPos);
+		this.netInterface.merge(toMerge.netInterface);
 	}
 
 	public void deleteNetwork()

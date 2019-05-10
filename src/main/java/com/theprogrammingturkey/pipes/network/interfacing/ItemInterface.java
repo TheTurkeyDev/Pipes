@@ -42,10 +42,15 @@ public class ItemInterface implements INetworkInterface
 	@Override
 	public void processTransfers()
 	{
-		System.out.println("# of Interfaces: " + interfaces.size());
 		Map<FilterStack, List<StackInfo>> avilable = new HashMap<>();
 
 		//TODO: Should we sort all interfaces? Even ones not configured as both inputs and outputs
+
+		System.out.println(interfaces.size());
+		for(long info : interfaces.keySet())
+		{
+			System.out.println(undoKeyHash(info));
+		}
 
 		List<InterfaceInfo> sortedInterfaces = new ArrayList<>(interfaces.values());
 
@@ -54,29 +59,30 @@ public class ItemInterface implements INetworkInterface
 		{
 			for(int i = 0; i < info.inv.getSlots(); i++)
 			{
-				//TODO: Not use 64
-				ItemStack stack = info.inv.extractItem(i, 64, true);
-				if(info.filter.isWhiteList)
+				ItemStack stack = info.inv.extractItem(i, info.inv.getSlotLimit(i), true);
+				if(stack == null || stack.isEmpty())
+					continue;
+				FilterStack fs = new FilterStack(stack);
+				if((info.filter.isWhiteList && info.filter.hasStackInFilter(fs)) || (!info.filter.isWhiteList && !info.filter.hasStackInFilter(fs)))
 				{
-					FilterStack fs = new FilterStack(stack);
-					if(info.filter.hasStackInFilter(fs))
-						avilable.get(fs).add(new StackInfo(info.inv, i, stack.getCount()));
-				}
-				else
-				{
-					FilterStack fs = new FilterStack(stack);
-					if(!info.filter.hasStackInFilter(fs))
-						avilable.get(fs).add(new StackInfo(info.inv, i, stack.getCount()));
+					List<StackInfo> fsInfo = avilable.get(fs);
+					if(fsInfo == null)
+					{
+						fsInfo = new ArrayList<StackInfo>();
+						avilable.put(fs, fsInfo);
+					}
+					fsInfo.add(new StackInfo(info.inv, i, stack.getCount()));
 				}
 			}
 		}
 
+		Map<IItemHandler, List<Integer>> ignoredInvSlots = new HashMap<>();
 		Collections.sort(sortedInterfaces, outputPrioritySort);
 		for(InterfaceInfo info : sortedInterfaces)
 		{
-			for(FilterStack stack : info.filter.getStacks())
+			for(FilterStack stack : avilable.keySet())
 			{
-				boolean hasStack = avilable.containsKey(stack);
+				boolean hasStack = info.filter.hasStackInFilter(stack);
 				if((hasStack && info.filter.isWhiteList) || (!hasStack && !info.filter.isWhiteList))
 				{
 					int stackInfoIndex = 0;
@@ -84,20 +90,38 @@ public class ItemInterface implements INetworkInterface
 					ItemStack toInsert = null;
 					for(int i = 0; i < info.inv.getSlots(); i++)
 					{
-						for(int j = stackInfoIndex; j < fromStacks.size(); j++)
+						if(!ignoredInvSlots.containsKey(info.inv) || !ignoredInvSlots.get(info.inv).contains(i))
 						{
-							StackInfo stackInfo = fromStacks.get(j);
-							toInsert = stack.getAsItemStack();
-							toInsert.setCount(stackInfo.amount);
+							for(int j = stackInfoIndex; j < fromStacks.size(); j++)
+							{
+								StackInfo stackInfo = fromStacks.get(j);
+								if(!stackInfo.inserted && !info.inv.equals(stackInfo.inv))
+								{
+									toInsert = stack.getAsItemStack();
+									toInsert.setCount(stackInfo.amount);
 
-							toInsert = info.inv.insertItem(i, toInsert, false);
+									toInsert = info.inv.insertItem(i, toInsert, false);
 
-							if(toInsert.getCount() != 0)
-								break;
-							else
-								stackInfo.inv.extractItem(stackInfo.slot, stackInfo.amount, false);
+									if(stackInfo.amount != toInsert.getCount())
+									{
+										stackInfo.amount = toInsert.getCount();
+										List<Integer> ignoredSlots = ignoredInvSlots.get(info.inv);
+										if(ignoredSlots == null)
+										{
+											ignoredSlots = new ArrayList<Integer>();
+											ignoredInvSlots.put(info.inv, ignoredSlots);
+										}
+										ignoredSlots.add(i);
 
-							stackInfoIndex = j;
+										if(toInsert.getCount() == 0 || toInsert.isEmpty())
+										{
+											stackInfo.inv.extractItem(stackInfo.slot, stackInfo.amount, false);
+											stackInfo.inserted = true;
+											stackInfoIndex = j;
+										}
+									}
+								}
+							}
 						}
 					}
 
@@ -112,13 +136,34 @@ public class ItemInterface implements INetworkInterface
 	}
 
 	@Override
-	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
+	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
 	{
 		TileEntity te = world.getTileEntity(pos);
-		if(te != null && te.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, facing))
+		if(te != null)
 		{
+			int teHash = te.hashCode();
 			long hash = getKeyHash(pos, facing);
-			interfaces.put(hash, new InterfaceInfo(te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, facing), new InterfaceFilter(), facing));
+			if(interfaces.containsKey(hash))
+			{
+				/*
+				 * TE hash is just here because this method will often get triggered multiple times
+				 * without the te actually changing. This may help keep thing clean in the future
+				 * instead of making a new InterfaceInfo every time and only do it when the te
+				 * actually changes.
+				 */
+				//TODO: Find a fix for Furnaces as it changes TE, but then resets to its old te when switching block state
+				InterfaceInfo info = interfaces.get(hash);
+				if(teHash != info.teHash && te.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, facing))
+					interfaces.put(hash, new InterfaceInfo(te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, facing), new InterfaceFilter(), facing, teHash));
+			}
+			else
+			{
+				interfaces.put(hash, new InterfaceInfo(te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, facing), new InterfaceFilter(), facing, teHash));
+			}
+		}
+		else
+		{
+			removeInterfacedBlock(world, pos, facing);
 		}
 	}
 
@@ -135,10 +180,27 @@ public class ItemInterface implements INetworkInterface
 		posInterfaces.filter = filter;
 	}
 
-	//TODO: Make a better hash
+	@Override
+	public void merge(INetworkInterface netInterface)
+	{
+		this.interfaces.putAll(((ItemInterface) netInterface).interfaces);
+	}
+
+	private BlockPos undoKeyHash(long serialized)
+	{
+		return BlockPos.fromLong(serialized);
+	}
+
 	public Long getKeyHash(BlockPos pos, EnumFacing facing)
 	{
-		return pos.toLong() + facing.getIndex();
+		/*
+		 * Essentially I'm using the upper 3 bits of the Y coordinate value. Based on my maths and
+		 * info found in BlockPos, the Y_SHIFT should be 12 allowing for values of 0-4096, but since
+		 * the y coord should never go that high, I'm using the upper 3 bits to store the facing
+		 * value (0-5) leaving 9 bits left for the y before it overflows (0-512), it's close, but I
+		 * think it'll work. Maybe there's a better way, but idk.
+		 */
+		return pos.toLong() | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
 	}
 
 	private static class StackInfo
@@ -146,6 +208,7 @@ public class ItemInterface implements INetworkInterface
 		public IItemHandler inv;
 		public int slot;
 		public int amount;
+		public boolean inserted = false;
 
 		public StackInfo(IItemHandler inv, int slot, int amount)
 		{
@@ -160,12 +223,14 @@ public class ItemInterface implements INetworkInterface
 		public IItemHandler inv;
 		public InterfaceFilter filter;
 		public EnumFacing facing;
+		public int teHash;
 
-		public InterfaceInfo(IItemHandler inv, InterfaceFilter filter, EnumFacing facing)
+		public InterfaceInfo(IItemHandler inv, InterfaceFilter filter, EnumFacing facing, int teHash)
 		{
 			this.inv = inv;
 			this.filter = filter;
 			this.facing = facing;
+			this.teHash = teHash;
 		}
 	}
 }
