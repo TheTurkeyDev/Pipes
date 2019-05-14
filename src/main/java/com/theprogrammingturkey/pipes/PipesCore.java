@@ -4,6 +4,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.theprogrammingturkey.pipes.listener.GameListener;
 import com.theprogrammingturkey.pipes.listener.WorldListener;
+import com.theprogrammingturkey.pipes.packets.PipesPacketHandler;
 import com.theprogrammingturkey.pipes.util.RegistryHelper;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -38,6 +39,8 @@ public class PipesCore
 		MinecraftForge.EVENT_BUS.register(new RegistryHelper());
 		MinecraftForge.EVENT_BUS.register(new GameListener());
 		MinecraftForge.EVENT_BUS.register(new WorldListener());
+
+		PipesPacketHandler.init();
 	}
 
 	@EventHandler

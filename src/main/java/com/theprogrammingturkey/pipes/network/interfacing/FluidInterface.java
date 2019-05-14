@@ -7,15 +7,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.theprogrammingturkey.pipes.util.FilterStack;
-
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
 
 public class FluidInterface implements INetworkInterface
 {
@@ -50,11 +50,11 @@ public class FluidInterface implements INetworkInterface
 			{
 				InterfaceInfo info = interfaces.get(hash);
 				if(teHash != info.teHash && holder.te.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, holder.facing))
-					interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, holder.facing), new InterfaceFilter(), holder.facing, teHash));
+					interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, holder.facing), holder.filter, holder.facing, teHash));
 			}
 			else
 			{
-				interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, holder.facing), new InterfaceFilter(), holder.facing, teHash));
+				interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, holder.facing), holder.filter, holder.facing, teHash));
 			}
 		}
 		this.toUpdate.clear();
@@ -63,7 +63,7 @@ public class FluidInterface implements INetworkInterface
 	@Override
 	public void processTransfers()
 	{
-		Map<FilterStack, List<StackInfo>> avilable = new HashMap<>();
+		Map<Fluid, List<StackInfo>> avilable = new HashMap<>();
 
 		//TODO: Should we sort all interfaces? Even ones not configured as both inputs and outputs
 
@@ -72,16 +72,38 @@ public class FluidInterface implements INetworkInterface
 		Collections.sort(sortedInterfaces, inputPrioritySort);
 		for(InterfaceInfo info : sortedInterfaces)
 		{
-			
+			FluidStack fs;
+			if(info.inv instanceof IFluidTank)
+				fs = info.inv.drain(((IFluidTank) info.inv).getCapacity(), false);
+			else
+				fs = info.inv.drain(Fluid.BUCKET_VOLUME, false);
+			List<StackInfo> fsInfo = avilable.get(fs.getFluid());
+			if(fsInfo == null)
+			{
+				fsInfo = new ArrayList<StackInfo>();
+				avilable.put(fs.getFluid(), fsInfo);
+			}
+			fsInfo.add(new StackInfo(info.inv, info.filter, fs.amount));
 		}
 
-		Map<IItemHandler, List<Integer>> ignoredInvSlots = new HashMap<>();
 		Collections.sort(sortedInterfaces, outputPrioritySort);
 		for(InterfaceInfo info : sortedInterfaces)
 		{
-			for(FilterStack stack : avilable.keySet())
+			for(Fluid fluid : avilable.keySet())
 			{
-
+				for(StackInfo stackInfo : avilable.get(fluid))
+				{
+					if(!stackInfo.inv.equals(info.inv) && wontSendBack(info.filter, stackInfo.filter))
+					{
+						int amonutUsed = info.inv.fill(stackInfo.getStack(fluid), true);
+						if(amonutUsed != 0)
+						{
+							stackInfo.amountLeft -= amonutUsed;
+							if(stackInfo.amountLeft == 0)
+								stackInfo.inv.drain(stackInfo.amount, true);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -94,7 +116,7 @@ public class FluidInterface implements INetworkInterface
 	}
 
 	@Override
-	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
+	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
 	{
 		TileEntity te = world.getTileEntity(pos);
 		//Because of Furnaces we need to cache this stuff and only add it all once per tick
@@ -106,12 +128,12 @@ public class FluidInterface implements INetworkInterface
 				if(holder.pos.equals(pos))
 					toUpdate.remove(i);
 			}
-			this.toUpdate.add(new TEHolder(world, pos, te, facing));
+			this.toUpdate.add(new TEHolder(world, pos, te, facing, filter));
 		}
 	}
 
 	@Override
-	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
+	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
 	{
 		TileEntity te = world.getTileEntity(pos);
 
@@ -124,7 +146,7 @@ public class FluidInterface implements INetworkInterface
 		}
 
 		if(te != null)
-			this.toUpdate.add(new TEHolder(world, pos, te, facing));
+			this.toUpdate.add(new TEHolder(world, pos, te, facing, filter));
 		else
 			removeInterfacedBlock(world, pos, facing);
 	}
@@ -143,43 +165,35 @@ public class FluidInterface implements INetworkInterface
 	}
 
 	@Override
+	public InterfaceFilter getFilterFromPipe(BlockPos pos, EnumFacing facing)
+	{
+		return interfaces.get(this.getKeyHash(pos, facing)).filter;
+	}
+
+	@Override
 	public void merge(INetworkInterface netInterface)
 	{
 		this.interfaces.putAll(((FluidInterface) netInterface).interfaces);
 	}
 
-	private BlockPos undoKeyHash(long serialized)
-	{
-		return BlockPos.fromLong(serialized);
-	}
-
-	public Long getKeyHash(BlockPos pos, EnumFacing facing)
-	{
-		/*
-		 * Essentially I'm using the upper 3 bits of the Y coordinate value. Based on my maths and
-		 * info found in BlockPos, the Y_SHIFT should be 12 allowing for values of 0-4096, but since
-		 * the y coord should never go that high, I'm using the upper 3 bits to store the facing
-		 * value (0-5) leaving 9 bits left for the y before it overflows (0-512), it's close, but I
-		 * think it'll work. Maybe there's a better way, but idk.
-		 */
-		return pos.toLong() | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
-	}
-
 	private static class StackInfo
 	{
 		public IFluidHandler inv;
-		public int slot;
 		public int amount;
 		public int amountLeft;
 		public InterfaceFilter filter;
 
-		public StackInfo(IFluidHandler inv, InterfaceFilter filter, int slot, int amount)
+		public StackInfo(IFluidHandler inv, InterfaceFilter filter, int amount)
 		{
 			this.inv = inv;
 			this.filter = filter;
-			this.slot = slot;
 			this.amount = amount;
 			this.amountLeft = amount;
+		}
+
+		public FluidStack getStack(Fluid fluid)
+		{
+			return new FluidStack(fluid, amountLeft);
 		}
 	}
 
@@ -205,13 +219,15 @@ public class FluidInterface implements INetworkInterface
 		public BlockPos pos;
 		public TileEntity te;
 		public EnumFacing facing;
+		public InterfaceFilter filter;
 
-		public TEHolder(World world, BlockPos pos, TileEntity te, EnumFacing facing)
+		public TEHolder(World world, BlockPos pos, TileEntity te, EnumFacing facing, InterfaceFilter filter)
 		{
 			this.world = world;
 			this.pos = pos;
 			this.te = te;
 			this.facing = facing;
+			this.filter = filter;
 		}
 	}
 }

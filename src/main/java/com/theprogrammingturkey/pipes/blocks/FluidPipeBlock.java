@@ -2,23 +2,25 @@ package com.theprogrammingturkey.pipes.blocks;
 
 import com.theprogrammingturkey.pipes.network.PipeNetwork;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
-import com.theprogrammingturkey.pipes.util.RegistryHelper;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter;
+import com.theprogrammingturkey.pipes.util.Util;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 public class FluidPipeBlock extends BasePipeBlock
 {
 	public FluidPipeBlock()
 	{
-		super("item_pipe");
+		super("fluid_pipe");
 		this.setDefaultState(this.blockState.getBaseState().withProperty(NORTH, EnumAttachType.NONE).withProperty(EAST, EnumAttachType.NONE).withProperty(SOUTH, EnumAttachType.NONE).withProperty(WEST, EnumAttachType.NONE).withProperty(UP, EnumAttachType.NONE).withProperty(DOWN, EnumAttachType.NONE));
 	}
 
@@ -29,9 +31,9 @@ public class FluidPipeBlock extends BasePipeBlock
 		{
 			BlockPos offset = origin.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(neighbor.getBlock().equals(RegistryHelper.FLUID_PIPE))
+			if(Util.areBlockAndTypeEqual(NetworkType.FLUID, neighbor.getBlock()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
-			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset) instanceof IInventory)
+			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);
 		}
 		return state;
@@ -59,7 +61,7 @@ public class FluidPipeBlock extends BasePipeBlock
 		{
 			PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.addPipeToNetwork(world, pos);
 			for(EnumFacing side : EnumFacing.VALUES)
-				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite());
+				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite(), new InterfaceFilter());
 		}
 	}
 
@@ -74,6 +76,6 @@ public class FluidPipeBlock extends BasePipeBlock
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
 		PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
 		if(network != null)
-			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side);
+			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side, new InterfaceFilter());
 	}
 }

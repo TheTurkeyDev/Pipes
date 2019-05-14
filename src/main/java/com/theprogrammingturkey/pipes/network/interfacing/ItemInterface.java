@@ -1,6 +1,7 @@
 package com.theprogrammingturkey.pipes.network.interfacing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -57,11 +58,11 @@ public class ItemInterface implements INetworkInterface
 				//TODO: Find a fix for Furnaces as it changes TE, but then resets to its old te when switching block state
 				InterfaceInfo info = interfaces.get(hash);
 				if(teHash != info.teHash && holder.te.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, holder.facing))
-					interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, holder.facing), new InterfaceFilter(), holder.facing, teHash));
+					interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, holder.facing), holder.filter, holder.facing, teHash));
 			}
 			else
 			{
-				interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, holder.facing), new InterfaceFilter(), holder.facing, teHash));
+				interfaces.put(hash, new InterfaceInfo(holder.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, holder.facing), holder.filter, holder.facing, teHash));
 			}
 		}
 		this.toUpdate.clear();
@@ -93,7 +94,7 @@ public class ItemInterface implements INetworkInterface
 						fsInfo = new ArrayList<StackInfo>();
 						avilable.put(fs, fsInfo);
 					}
-					fsInfo.add(new StackInfo(info.inv,info.filter , i, stack.getCount()));
+					fsInfo.add(new StackInfo(info.inv, info.filter, i, stack.getCount()));
 				}
 			}
 		}
@@ -166,7 +167,7 @@ public class ItemInterface implements INetworkInterface
 	}
 
 	@Override
-	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
+	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
 	{
 		TileEntity te = world.getTileEntity(pos);
 		//Because of Furnaces we need to cache this stuff and only add it all once per tick
@@ -178,12 +179,12 @@ public class ItemInterface implements INetworkInterface
 				if(holder.pos.equals(pos))
 					toUpdate.remove(i);
 			}
-			this.toUpdate.add(new TEHolder(world, pos, te, facing));
+			this.toUpdate.add(new TEHolder(world, pos, te, facing, filter));
 		}
 	}
 
 	@Override
-	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
+	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
 	{
 		TileEntity te = world.getTileEntity(pos);
 
@@ -196,7 +197,7 @@ public class ItemInterface implements INetworkInterface
 		}
 
 		if(te != null)
-			this.toUpdate.add(new TEHolder(world, pos, te, facing));
+			this.toUpdate.add(new TEHolder(world, pos, te, facing, filter));
 		else
 			removeInterfacedBlock(world, pos, facing);
 	}
@@ -215,26 +216,15 @@ public class ItemInterface implements INetworkInterface
 	}
 
 	@Override
+	public InterfaceFilter getFilterFromPipe(BlockPos pos, EnumFacing facing)
+	{
+		return interfaces.get(this.getKeyHash(pos.offset(facing.getOpposite()), facing)).filter;
+	}
+
+	@Override
 	public void merge(INetworkInterface netInterface)
 	{
 		this.interfaces.putAll(((ItemInterface) netInterface).interfaces);
-	}
-
-	private BlockPos undoKeyHash(long serialized)
-	{
-		return BlockPos.fromLong(serialized);
-	}
-
-	public Long getKeyHash(BlockPos pos, EnumFacing facing)
-	{
-		/*
-		 * Essentially I'm using the upper 3 bits of the Y coordinate value. Based on my maths and
-		 * info found in BlockPos, the Y_SHIFT should be 12 allowing for values of 0-4096, but since
-		 * the y coord should never go that high, I'm using the upper 3 bits to store the facing
-		 * value (0-5) leaving 9 bits left for the y before it overflows (0-512), it's close, but I
-		 * think it'll work. Maybe there's a better way, but idk.
-		 */
-		return pos.toLong() | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
 	}
 
 	private static class StackInfo
@@ -277,13 +267,15 @@ public class ItemInterface implements INetworkInterface
 		public BlockPos pos;
 		public TileEntity te;
 		public EnumFacing facing;
+		public InterfaceFilter filter;
 
-		public TEHolder(World world, BlockPos pos, TileEntity te, EnumFacing facing)
+		public TEHolder(World world, BlockPos pos, TileEntity te, EnumFacing facing, InterfaceFilter filter)
 		{
 			this.world = world;
 			this.pos = pos;
 			this.te = te;
 			this.facing = facing;
+			this.filter = filter;
 		}
 	}
 }
