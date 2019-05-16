@@ -3,21 +3,19 @@ package com.theprogrammingturkey.pipes.blocks;
 import com.theprogrammingturkey.pipes.network.PipeNetwork;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter;
-import com.theprogrammingturkey.pipes.packets.GetFilterPacket;
-import com.theprogrammingturkey.pipes.packets.PipesPacketHandler;
-import com.theprogrammingturkey.pipes.ui.FilterUI;
 import com.theprogrammingturkey.pipes.util.RegistryHelper;
+import com.theprogrammingturkey.pipes.util.UIUtil;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.items.CapabilityItemHandler;
 
 public class ItemPipeBlock extends BasePipeBlock
@@ -37,7 +35,7 @@ public class ItemPipeBlock extends BasePipeBlock
 			IBlockState neighbor = world.getBlockState(offset);
 			if(neighbor.getBlock().equals(RegistryHelper.ITEM_PIPE))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
-			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side))
+			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side.getOpposite()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);
 		}
 		return state;
@@ -51,7 +49,7 @@ public class ItemPipeBlock extends BasePipeBlock
 			PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
 			if(network != null)
 				for(EnumFacing side : EnumFacing.VALUES)
-					network.getNetworkInterface().removeInterfacedBlock(world, pos.offset(side), side.getOpposite());
+					network.getNetworkInterface().removeInterfacedBlock(world, pos, side.getOpposite());
 
 			PipeNetworkManager.ITEM_NETWORK.removePipeFromNetwork(world, pos);
 		}
@@ -65,7 +63,7 @@ public class ItemPipeBlock extends BasePipeBlock
 		{
 			PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.addPipeToNetwork(world, pos);
 			for(EnumFacing side : EnumFacing.VALUES)
-				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite(), new InterfaceFilter());
+				network.getNetworkInterface().addInterfacedBlock(world, pos, side.getOpposite(), new InterfaceFilter(side.getOpposite()));
 		}
 	}
 
@@ -80,25 +78,33 @@ public class ItemPipeBlock extends BasePipeBlock
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
 		PipeNetwork network = PipeNetworkManager.ITEM_NETWORK.getNetwork(pos);
 		if(network != null)
-			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side, new InterfaceFilter());
+			network.getNetworkInterface().updateInterfacedBlock(world, pos, side, new InterfaceFilter(side));
 	}
 
+	@Override
 	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ)
 	{
-		if(world.isRemote)
+		if(!world.isRemote)
 		{
+			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForBlockState(state);
+			if(networkManager == null)
+				return true;
+			PipeNetwork network = networkManager.getNetwork(pos);
+			if(network == null)
+				return true;
+
 			if(hitY < 0.4375)
-				PipesPacketHandler.INSTANCE.sendToServer(new GetFilterPacket(pos, EnumFacing.UP));
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getNetworkInterface().getFilterFromPipe(pos, EnumFacing.UP));
 			else if(hitY > 0.5625)
-				PipesPacketHandler.INSTANCE.sendToServer(new GetFilterPacket(pos, EnumFacing.DOWN));
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getNetworkInterface().getFilterFromPipe(pos, EnumFacing.DOWN));
 			else if(hitX < 0.4375)
-				PipesPacketHandler.INSTANCE.sendToServer(new GetFilterPacket(pos, EnumFacing.EAST));
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getNetworkInterface().getFilterFromPipe(pos, EnumFacing.EAST));
 			else if(hitX > 0.5625)
-				PipesPacketHandler.INSTANCE.sendToServer(new GetFilterPacket(pos, EnumFacing.WEST));
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getNetworkInterface().getFilterFromPipe(pos, EnumFacing.WEST));
 			else if(hitZ < 0.4375)
-				PipesPacketHandler.INSTANCE.sendToServer(new GetFilterPacket(pos, EnumFacing.SOUTH));
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getNetworkInterface().getFilterFromPipe(pos, EnumFacing.SOUTH));
 			else if(hitZ > 0.5625)
-				PipesPacketHandler.INSTANCE.sendToServer(new GetFilterPacket(pos, EnumFacing.NORTH));
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getNetworkInterface().getFilterFromPipe(pos, EnumFacing.NORTH));
 			return true;
 		}
 		return super.onBlockActivated(world, pos, state, player, hand, facing, hitX, hitY, hitZ);

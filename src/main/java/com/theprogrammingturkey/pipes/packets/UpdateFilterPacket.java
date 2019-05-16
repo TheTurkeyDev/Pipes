@@ -20,10 +20,15 @@ public class UpdateFilterPacket implements IMessage
 
 	public UpdateFilterPacket()
 	{
-		this.pos = BlockPos.ORIGIN;
-		this.filter = new InterfaceFilter();
 	}
 
+	/**
+	 * 
+	 * @param pos
+	 *            Position of the pipe block/ block holding the filter
+	 * @param facing
+	 *            The interfacing face of the ItemHandler
+	 */
 	public UpdateFilterPacket(BlockPos pos, InterfaceFilter filter)
 	{
 		this.pos = pos;
@@ -59,8 +64,7 @@ public class UpdateFilterPacket implements IMessage
 	{
 		this.pos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
 
-		filter = new InterfaceFilter();
-		filter.facing = EnumFacing.VALUES[buf.readByte()];
+		filter = new InterfaceFilter(EnumFacing.VALUES[buf.readByte()]);
 
 		filter.inputFilter.enabled = buf.readBoolean();
 		filter.inputFilter.priority = buf.readInt();

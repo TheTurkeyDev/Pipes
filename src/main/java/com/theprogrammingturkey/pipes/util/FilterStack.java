@@ -27,8 +27,26 @@ public class FilterStack
 
 	public ItemStack getAsItemStack()
 	{
-		ItemStack stack = new ItemStack(item, meta);
+		ItemStack stack = new ItemStack(item, 1, meta);
 		stack.setTagCompound(nbt);
 		return stack;
+	}
+
+	public String toString()
+	{
+		String toReturn = "";
+		if(item != null)
+			toReturn += item.toString();
+		else
+			toReturn += "NULL";
+
+		toReturn += " | " + meta + " | ";
+
+		if(nbt != null)
+			toReturn += nbt.toString();
+		else
+			toReturn += "NULL";
+
+		return toReturn;
 	}
 }

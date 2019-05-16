@@ -23,7 +23,11 @@ public class PipeNetworkManager
 
 	public static PipeNetworkManager getNetworkManagerAtPos(World world, BlockPos pos)
 	{
-		IBlockState state = world.getBlockState(pos);
+		return getNetworkManagerForBlockState(world.getBlockState(pos));
+	}
+
+	public static PipeNetworkManager getNetworkManagerForBlockState(IBlockState state)
+	{
 		if(Util.areBlockAndTypeEqual(NetworkType.ITEM, state.getBlock()))
 			return ITEM_NETWORK;
 		else if(Util.areBlockAndTypeEqual(NetworkType.FLUID, state.getBlock()))

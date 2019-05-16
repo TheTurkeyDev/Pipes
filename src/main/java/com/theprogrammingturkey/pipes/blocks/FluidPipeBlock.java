@@ -33,7 +33,7 @@ public class FluidPipeBlock extends BasePipeBlock
 			IBlockState neighbor = world.getBlockState(offset);
 			if(Util.areBlockAndTypeEqual(NetworkType.FLUID, neighbor.getBlock()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
-			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side))
+			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side.getOpposite()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);
 		}
 		return state;
@@ -61,7 +61,7 @@ public class FluidPipeBlock extends BasePipeBlock
 		{
 			PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.addPipeToNetwork(world, pos);
 			for(EnumFacing side : EnumFacing.VALUES)
-				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite(), new InterfaceFilter());
+				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite(), new InterfaceFilter(side.getOpposite()));
 		}
 	}
 
@@ -76,6 +76,6 @@ public class FluidPipeBlock extends BasePipeBlock
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
 		PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
 		if(network != null)
-			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side, new InterfaceFilter());
+			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side, new InterfaceFilter(side));
 	}
 }

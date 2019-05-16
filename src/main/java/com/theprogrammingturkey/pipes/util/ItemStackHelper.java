@@ -1,6 +1,7 @@
 package com.theprogrammingturkey.pipes.util;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 
 public class ItemStackHelper
 {
@@ -33,14 +34,14 @@ public class ItemStackHelper
 		if(stack1.meta != stack2.meta)
 			return false;
 
-		if(stack1.nbt == null && stack2.nbt != null && !stack2.nbt.isEmpty())
-			return false;
-
-		if(stack1.nbt.equals(stack2.nbt))
-			return false;
-
-		return true;
+		return areNBTTagsEqual(stack1.nbt, stack2.nbt);
 	}
-	
-	
+
+	public static boolean areNBTTagsEqual(NBTTagCompound nbt1, NBTTagCompound nbt2)
+	{
+		if((nbt1 == null || nbt1.isEmpty()) && (nbt2 == null || nbt2.isEmpty()))
+			return true;
+		return nbt1 == null ? false : nbt1.equals(nbt2);
+	}
+
 }

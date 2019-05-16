@@ -13,31 +13,94 @@ public class InterfaceFilter
 	public DirectionFilter inputFilter = new DirectionFilter();
 	public DirectionFilter outputFilter = new DirectionFilter();
 
-	public EnumFacing facing = EnumFacing.NORTH;
+	//Facing direction of the ItemHandler that this is interfacing with
+	public EnumFacing facing;
 
-	public boolean hasStackInFilter(boolean input, FilterStack stack)
+	private boolean showingInput = true;
+
+	public InterfaceFilter(EnumFacing facing)
 	{
-		if(input)
+		this.facing = facing;
+	}
+
+	public boolean hasStackInFilter(FilterStack stack)
+	{
+		if(showingInput)
 			return inputFilter.hasStackInFilter(stack);
 		return outputFilter.hasStackInFilter(stack);
 	}
 
-	public void addStackToFilter(boolean input, FilterStack stack)
+	public void addStackToFilter(FilterStack stack)
 	{
-		if(input)
+		if(showingInput)
 			inputFilter.addStackToFilter(stack);
 		else
 			outputFilter.addStackToFilter(stack);
 	}
 
-	public List<FilterStack> getStacks(boolean input)
+	public List<FilterStack> getStacks()
 	{
-		return input ? inputFilter.getStacks() : outputFilter.getStacks();
+		return showingInput ? inputFilter.getStacks() : outputFilter.getStacks();
 	}
 
-	public boolean isWhiteList(boolean input)
+	public boolean isWhiteList()
 	{
-		return input ? inputFilter.isWhiteList : outputFilter.isWhiteList;
+		return showingInput ? inputFilter.isWhiteList : outputFilter.isWhiteList;
+	}
+
+	public void setWhiteList(boolean whiteList)
+	{
+		if(showingInput)
+			inputFilter.isWhiteList = whiteList;
+		else
+			outputFilter.isWhiteList = whiteList;
+	}
+
+	public boolean isEnabled()
+	{
+		return showingInput ? inputFilter.enabled : outputFilter.enabled;
+	}
+
+	public void setEnabled(boolean enabled)
+	{
+		if(showingInput)
+			inputFilter.enabled = enabled;
+		else
+			outputFilter.enabled = enabled;
+	}
+
+	public int getPriority()
+	{
+		return showingInput ? inputFilter.priority : outputFilter.priority;
+	}
+
+	public void setPriority(int priority)
+	{
+		if(showingInput)
+			inputFilter.priority = priority;
+		else
+			outputFilter.priority = priority;
+	}
+
+	public void incPriority()
+	{
+		if(showingInput)
+			inputFilter.priority++;
+		else
+			outputFilter.priority++;
+	}
+
+	public void decPriority()
+	{
+		if(showingInput)
+			inputFilter.priority--;
+		else
+			outputFilter.priority--;
+	}
+
+	public void setShowInputFilter(boolean showingInput)
+	{
+		this.showingInput = showingInput;
 	}
 
 	public static class DirectionFilter

@@ -8,7 +8,6 @@ public class WorldListener
 	@SubscribeEvent
 	public void onWorldLoad(WorldEvent.Load event)
 	{
-		if(!event.getWorld().isRemote)
-			System.out.println("Here " + event.getWorld());
+		
 	}
 }

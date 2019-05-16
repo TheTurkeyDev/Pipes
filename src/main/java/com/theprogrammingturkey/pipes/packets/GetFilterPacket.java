@@ -22,6 +22,13 @@ public class GetFilterPacket implements IMessage
 		side = EnumFacing.DOWN;
 	}
 
+	/**
+	 * 
+	 * @param pos
+	 *            Position of the pipe block/ block holding the filter
+	 * @param facing
+	 *            The interfacing face of the ItemHandler
+	 */
 	public GetFilterPacket(BlockPos pos, EnumFacing side)
 	{
 		this.pos = pos;
@@ -57,7 +64,7 @@ public class GetFilterPacket implements IMessage
 				PipeNetwork network = networkManager.getNetwork(message.pos);
 				if(network == null)
 					return null;
-				return new RecieveFilterPacket(network.getNetworkInterface().getFilterFromPipe(message.pos, message.side), true);
+				return new RecieveFilterPacket(message.pos, network.getNetworkInterface().getFilterFromPipe(message.pos, message.side));
 			}
 			return null;
 		}

@@ -1,7 +1,6 @@
 package com.theprogrammingturkey.pipes.network.interfacing;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -86,7 +85,8 @@ public class ItemInterface implements INetworkInterface
 				if(stack == null || stack.isEmpty())
 					continue;
 				FilterStack fs = new FilterStack(stack);
-				if((info.filter.isWhiteList(false) && info.filter.hasStackInFilter(false, fs)) || (!info.filter.isWhiteList(false) && !info.filter.hasStackInFilter(false, fs)))
+				info.filter.setShowInputFilter(false);
+				if((info.filter.isWhiteList() && info.filter.hasStackInFilter(fs)) || (!info.filter.isWhiteList() && !info.filter.hasStackInFilter(fs)))
 				{
 					List<StackInfo> fsInfo = avilable.get(fs);
 					if(fsInfo == null)
@@ -105,8 +105,9 @@ public class ItemInterface implements INetworkInterface
 		{
 			for(FilterStack stack : avilable.keySet())
 			{
-				boolean hasStack = info.filter.hasStackInFilter(true, stack);
-				if((hasStack && info.filter.isWhiteList(true)) || (!hasStack && !info.filter.isWhiteList(true)))
+				info.filter.setShowInputFilter(true);
+				boolean hasStack = info.filter.hasStackInFilter(stack);
+				if((hasStack && info.filter.isWhiteList()) || (!hasStack && !info.filter.isWhiteList()))
 				{
 					//Inserting into a specific inventory
 					int stackInfoIndex = 0;
@@ -169,14 +170,15 @@ public class ItemInterface implements INetworkInterface
 	@Override
 	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
 	{
-		TileEntity te = world.getTileEntity(pos);
+		BlockPos offsetPos = pos.offset(facing.getOpposite());
+		TileEntity te = world.getTileEntity(offsetPos);
 		//Because of Furnaces we need to cache this stuff and only add it all once per tick
 		if(te != null)
 		{
 			for(int i = toUpdate.size() - 1; i >= 0; i--)
 			{
 				TEHolder holder = toUpdate.get(i);
-				if(holder.pos.equals(pos))
+				if(holder.te.getPos().equals(offsetPos))
 					toUpdate.remove(i);
 			}
 			this.toUpdate.add(new TEHolder(world, pos, te, facing, filter));
@@ -186,13 +188,14 @@ public class ItemInterface implements INetworkInterface
 	@Override
 	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
 	{
-		TileEntity te = world.getTileEntity(pos);
+		BlockPos offsetPos = pos.offset(facing.getOpposite());
+		TileEntity te = world.getTileEntity(offsetPos);
 
 		//Because of Furnaces we need to cache this stuff and only add it all once per tick
 		for(int i = toUpdate.size() - 1; i >= 0; i--)
 		{
 			TEHolder holder = toUpdate.get(i);
-			if(holder.pos.equals(pos))
+			if(holder.te.getPos().equals(offsetPos))
 				toUpdate.remove(i);
 		}
 
@@ -218,7 +221,7 @@ public class ItemInterface implements INetworkInterface
 	@Override
 	public InterfaceFilter getFilterFromPipe(BlockPos pos, EnumFacing facing)
 	{
-		return interfaces.get(this.getKeyHash(pos.offset(facing.getOpposite()), facing)).filter;
+		return interfaces.get(this.getKeyHash(pos, facing)).filter;
 	}
 
 	@Override

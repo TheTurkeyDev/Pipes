@@ -20,8 +20,24 @@ public interface INetworkInterface
 
 	public void removeInterfacedBlock(World world, BlockPos block, EnumFacing facing);
 
+	/**
+	 * 
+	 * @param pos
+	 *            Position of the pipe block/ block holding the filter
+	 * @param facing
+	 *            The interfacing face of the ItemHandler
+	 */
 	public void updateFilter(BlockPos pos, InterfaceFilter filter);
 
+	/**
+	 * Gets the filter from the given position and facing direction
+	 * 
+	 * @param pos
+	 *            Position of the pipe block/ block holding the filter
+	 * @param facing
+	 *            The interfacing face of the ItemHandler
+	 * @return
+	 */
 	public InterfaceFilter getFilterFromPipe(BlockPos pos, EnumFacing facing);
 
 	public void processTransfers();
