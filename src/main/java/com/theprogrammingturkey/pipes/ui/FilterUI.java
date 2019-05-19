@@ -54,7 +54,6 @@ public class FilterUI extends GuiContainer
 	 */
 	public void initGui()
 	{
-		this.mc = Minecraft.getMinecraft();
 		super.initGui();
 		this.buttonList.clear();
 		Keyboard.enableRepeatEvents(true);
@@ -66,11 +65,11 @@ public class FilterUI extends GuiContainer
 		this.buttonList.add(new GuiButton(5, guiLeft + 230, guiTop + 5, 15, 20, "+"));
 	}
 
-	public void drawScreen(int mouseX, int mouseY, float partialTick)
+	public void drawScreen(int mouseX, int mouseY, float partialTicks)
 	{
-		this.drawDefaultBackground();
-		super.drawScreen(mouseX, mouseY, partialTick);
-		this.renderHoveredToolTip(mouseX, mouseY);
+        this.drawDefaultBackground();
+        super.drawScreen(mouseX, mouseY, partialTicks);
+        this.renderHoveredToolTip(mouseX, mouseY);
 	}
 
 	protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY)

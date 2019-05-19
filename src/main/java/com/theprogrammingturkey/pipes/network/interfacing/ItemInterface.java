@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter.DirectionFilter;
 import com.theprogrammingturkey.pipes.util.FilterStack;
 
 import net.minecraft.item.ItemStack;
@@ -120,7 +121,7 @@ public class ItemInterface implements INetworkInterface
 							for(int j = stackInfoIndex; j < fromStacks.size(); j++)
 							{
 								StackInfo stackInfo = fromStacks.get(j);
-								if(stackInfo.amountLeft != 0 && !info.inv.equals(stackInfo.inv) && wontSendBack(info.filter, stackInfo.filter))
+								if(stackInfo.amountLeft != 0 && !info.inv.equals(stackInfo.inv) && wontSendBack(info.filter, stackInfo.filter, stack))
 								{
 									toInsert = stack.getAsItemStack();
 									toInsert.setCount(stackInfo.amountLeft);
@@ -160,10 +161,25 @@ public class ItemInterface implements INetworkInterface
 		}
 	}
 
-	private boolean wontSendBack(InterfaceFilter toFilter, InterfaceFilter fromFilter)
+	private boolean wontSendBack(InterfaceFilter toFilter, InterfaceFilter fromFilter, FilterStack stack)
 	{
-		if(toFilter.inputFilter.priority < fromFilter.inputFilter.priority)
+		DirectionFilter from = fromFilter.inputFilter;
+		DirectionFilter to = fromFilter.outputFilter;
+
+		if(!from.enabled || !to.enabled)
 			return true;
+
+		boolean hasStack = from.hasStackInFilter(stack);
+		if((hasStack && !from.isWhiteList) || (!hasStack && from.isWhiteList))
+			return true;
+
+		hasStack = to.hasStackInFilter(stack);
+		if((hasStack && !to.isWhiteList) || (!hasStack && to.isWhiteList))
+			return true;
+
+		if(to.priority < from.priority)
+			return true;
+
 		return false;
 	}
 

@@ -7,6 +7,7 @@ import com.theprogrammingturkey.pipes.util.FilterStack;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IThreadListener;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -117,9 +118,21 @@ public class RecieveFilterPacket implements IMessage
 		{
 			if(message.openUI)
 			{
-				EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
-				FMLCommonHandler.instance().showGuiScreen(new FilterUI(player, message.filter, message.pos));
-				player.openContainer.windowId = (Integer) message.windowID;
+				IThreadListener thread = FMLCommonHandler.instance().getWorldThread(ctx.getClientHandler());
+				if(thread.isCallingFromMinecraftThread())
+				{
+					EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
+					FMLCommonHandler.instance().showGuiScreen(new FilterUI(player, message.filter, message.pos));
+					player.openContainer.windowId = (Integer) message.windowID;
+				}
+				else
+				{
+					thread.addScheduledTask(() -> {
+						EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
+						FMLCommonHandler.instance().showGuiScreen(new FilterUI(player, message.filter, message.pos));
+						player.openContainer.windowId = (Integer) message.windowID;
+					});
+				}
 			}
 			return null;
 		}
