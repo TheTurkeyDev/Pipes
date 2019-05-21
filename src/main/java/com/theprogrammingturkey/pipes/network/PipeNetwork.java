@@ -1,32 +1,65 @@
 package com.theprogrammingturkey.pipes.network;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
-import com.theprogrammingturkey.pipes.network.interfacing.FluidInterface;
-import com.theprogrammingturkey.pipes.network.interfacing.INetworkInterface;
-import com.theprogrammingturkey.pipes.network.interfacing.ItemInterface;
 
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.World;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
-public class PipeNetwork
+public abstract class PipeNetwork<T> implements IPipeNetwork
 {
+	public static final long FACING_NUM_BITS = 3;
+	//I think this is right..... see BlockPos.NUM_Y_BITS
+	public static final long FACING_BIT_SHIFT = 60 - MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(30000000));
+	public static final long FACING_MASK = (1L << FACING_NUM_BITS) - 1L;
+
 	private boolean isActive = true;
 	private int networkID;
+	private NetworkType type;
 	private List<Long> containedBlockPos = new ArrayList<>();
 
-	private NetworkType type;
+	private Capability<T> holderCap;
 
-	private INetworkInterface netInterface;
+	//TODO fix
+	protected HashMap<Long, InterfaceInfo<T>> interfaces = new HashMap<>();
+	protected List<HandlerHolder<T>> toUpdate = new ArrayList<>();
 
-	public PipeNetwork(int networkID, NetworkType type)
+	protected Comparator<InterfaceInfo<T>> insertPrioritySort = new Comparator<InterfaceInfo<T>>()
+	{
+		@Override
+		public int compare(InterfaceInfo<T> ii1, InterfaceInfo<T> ii2)
+		{
+			return ii2.filter.insertFilter.priority - ii1.filter.insertFilter.priority;
+		}
+	};
+
+	protected Comparator<InterfaceInfo<T>> extractPrioritySort = new Comparator<InterfaceInfo<T>>()
+	{
+		@Override
+		public int compare(InterfaceInfo<T> ii1, InterfaceInfo<T> ii2)
+		{
+			return ii2.filter.extractFilter.priority - ii1.filter.extractFilter.priority;
+		}
+	};
+
+	public PipeNetwork(int networkID, NetworkType type, Capability<T> holderCap)
 	{
 		this.networkID = networkID;
 		this.type = type;
-		this.netInterface = PipeNetwork.getNewInterface(type);
+		this.holderCap = holderCap;
 	}
 
+	@Override
 	public void tick()
 	{
 		if(containedBlockPos.size() == 0)
@@ -34,10 +67,36 @@ public class PipeNetwork
 			this.isActive = false;
 			return;
 		}
-		netInterface.tick();
-		netInterface.processTransfers();
+
+		for(HandlerHolder<T> holder : this.toUpdate)
+		{
+			long hash = getKeyHash(holder.pos, holder.facing);
+			if(interfaces.containsKey(hash))
+			{
+				/*
+				 * TE hash is just here because this method will often get triggered multiple times
+				 * without the te actually changing. This may help keep thing clean in the future
+				 * instead of making a new InterfaceInfo every time and only do it when the te
+				 * actually changes.
+				 */
+				//TODO: Find a fix for Furnaces as it changes TE, but then resets to its old te when switching block state
+				InterfaceInfo<T> info = interfaces.get(hash);
+				if(!holder.isTE || holder.teHash != info.teHash)
+					interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
+			}
+			else
+			{
+				interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
+			}
+		}
+		this.toUpdate.clear();
+
+		processTransfers();
 	}
 
+	public abstract void processTransfers();
+
+	@Override
 	public void addBlockPosToNetwork(BlockPos pos)
 	{
 		containedBlockPos.add(pos.toLong());
@@ -53,9 +112,105 @@ public class PipeNetwork
 		return containedBlockPos.contains(pos.toLong());
 	}
 
+	public List<Long> getcontainedBlockPos()
+	{
+		return containedBlockPos;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void addInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
+	{
+		BlockPos offsetPos = pos.offset(facing.getOpposite());
+		TileEntity te = world.getTileEntity(offsetPos);
+		//Because of Furnaces we need to cache this stuff and only add it all once per tick
+		if(te != null)
+		{
+			if(!te.hasCapability(holderCap, facing))
+				return;
+
+			for(int i = toUpdate.size() - 1; i >= 0; i--)
+			{
+				HandlerHolder<T> holder = toUpdate.get(i);
+				if(holder.handlerPos.equals(offsetPos))
+					toUpdate.remove(i);
+			}
+			this.toUpdate.add(new HandlerHolder<T>(te.getCapability(holderCap, facing), world, pos, facing, filter, true, te.hashCode()));
+		}
+		else
+		{
+			if(this.type == NetworkType.FLUID)
+			{
+				IFluidHandler handler = FluidUtil.getFluidHandler(world, offsetPos, facing);
+				if(handler != null)
+					this.toUpdate.add((HandlerHolder<T>) new HandlerHolder<IFluidHandler>(handler, world, pos, facing, filter, false, 0));
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public void updateInterfacedBlock(World world, BlockPos pos, EnumFacing facing, InterfaceFilter filter)
+	{
+		BlockPos offsetPos = pos.offset(facing.getOpposite());
+		TileEntity te = world.getTileEntity(offsetPos);
+
+		//Because of Furnaces we need to cache this stuff and only add it all once per tick
+		for(int i = toUpdate.size() - 1; i >= 0; i--)
+		{
+			HandlerHolder<T> holder = toUpdate.get(i);
+			if(holder.handlerPos.equals(offsetPos))
+				toUpdate.remove(i);
+		}
+
+		if(te != null)
+		{
+			if(!te.hasCapability(holderCap, facing))
+				return;
+			this.toUpdate.add(new HandlerHolder<T>(te.getCapability(holderCap, facing), world, pos, facing, filter, true, te.hashCode()));
+		}
+		else
+		{
+			boolean flag = true;
+			if(this.type == NetworkType.FLUID)
+			{
+				IFluidHandler handler = FluidUtil.getFluidHandler(world, offsetPos, facing);
+				if(handler != null)
+				{
+					this.toUpdate.add((HandlerHolder<T>) new HandlerHolder<IFluidHandler>(handler, world, pos, facing, filter, false, 0));
+					flag = false;
+				}
+			}
+
+			if(flag)
+				removeInterfacedBlock(world, pos, facing);
+		}
+	}
+
+	public void removeInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
+	{
+		interfaces.remove(getKeyHash(pos, facing));
+	}
+
+	public void updateFilter(BlockPos pos, InterfaceFilter filter)
+	{
+		InterfaceInfo<?> posInterfaces = interfaces.get(getKeyHash(pos, filter.facing));
+		posInterfaces.filter = filter;
+	}
+
+	public InterfaceFilter getFilterFromPipe(BlockPos pos, EnumFacing facing)
+	{
+		return interfaces.get(this.getKeyHash(pos, facing)).filter;
+	}
+
+	@Override
 	public int getNetworkID()
 	{
 		return this.networkID;
+	}
+
+	@Override
+	public NetworkType getNetworkType()
+	{
+		return this.type;
 	}
 
 	public List<Long> getContainedBlockPos()
@@ -63,38 +218,51 @@ public class PipeNetwork
 		return containedBlockPos;
 	}
 
-	public void mergeWithNetwork(PipeNetwork toMerge)
+	@SuppressWarnings("unchecked")
+	public void mergeWithNetwork(IPipeNetwork toMerge)
 	{
-		this.containedBlockPos.addAll(toMerge.containedBlockPos);
-		this.netInterface.merge(toMerge.netInterface);
+		if(toMerge.getNetworkType().equals(this.type))
+		{
+			this.containedBlockPos.addAll(toMerge.getcontainedBlockPos());
+			this.interfaces.putAll(((PipeNetwork<T>) toMerge).interfaces);
+		}
 	}
 
+	@Override
 	public void deleteNetwork()
 	{
 		isActive = false;
 		containedBlockPos.clear();
 	}
 
+	@Override
 	public boolean isActive()
 	{
 		return isActive;
 	}
 
-	public INetworkInterface getNetworkInterface()
+	public Long getKeyHash(BlockPos pos, EnumFacing facing)
 	{
-		return this.netInterface;
+		/*
+		 * Essentially I'm using the upper 3 bits of the Y coordinate value. Based on my maths and
+		 * info found in BlockPos, the Y_SHIFT should be 12 allowing for values of 0-4096, but since
+		 * the y coord should never go that high, I'm using the upper 3 bits to store the facing
+		 * value (0-5) leaving 9 bits left for the y before it overflows (0-512), it's close, but I
+		 * think it'll work. Maybe there's a better way, but idk.
+		 */
+		return pos.toLong() | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
 	}
 
-	private static INetworkInterface getNewInterface(NetworkType type)
+	public static IPipeNetwork getNewNetwork(NetworkType type, int networkID)
 	{
 		switch(type)
 		{
 			case ITEM:
-				return new ItemInterface();
+				return new ItemPipeNetwork(networkID);
 			case FLUID:
-				return new FluidInterface();
+				return new FluidPipeNetwork(networkID);
 			default:
-				return new ItemInterface();
+				return new ItemPipeNetwork(networkID);
 		}
 	}
 }

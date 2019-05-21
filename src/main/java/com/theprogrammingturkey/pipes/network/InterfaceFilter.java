@@ -1,4 +1,4 @@
-package com.theprogrammingturkey.pipes.network.interfacing;
+package com.theprogrammingturkey.pipes.network;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,13 +10,13 @@ import net.minecraft.util.EnumFacing;
 
 public class InterfaceFilter
 {
-	public DirectionFilter inputFilter = new DirectionFilter();
-	public DirectionFilter outputFilter = new DirectionFilter();
+	public DirectionFilter insertFilter = new DirectionFilter();
+	public DirectionFilter extractFilter = new DirectionFilter();
 
 	//Facing direction of the ItemHandler that this is interfacing with
 	public EnumFacing facing;
 
-	private boolean showingInput = true;
+	private boolean showingInsert = true;
 
 	public InterfaceFilter(EnumFacing facing)
 	{
@@ -25,82 +25,82 @@ public class InterfaceFilter
 
 	public boolean hasStackInFilter(FilterStack stack)
 	{
-		if(showingInput)
-			return inputFilter.hasStackInFilter(stack);
-		return outputFilter.hasStackInFilter(stack);
+		if(showingInsert)
+			return insertFilter.hasStackInFilter(stack);
+		return extractFilter.hasStackInFilter(stack);
 	}
 
 	public void addStackToFilter(FilterStack stack)
 	{
-		if(showingInput)
-			inputFilter.addStackToFilter(stack);
+		if(showingInsert)
+			insertFilter.addStackToFilter(stack);
 		else
-			outputFilter.addStackToFilter(stack);
+			extractFilter.addStackToFilter(stack);
 	}
 
 	public List<FilterStack> getStacks()
 	{
-		return showingInput ? inputFilter.getStacks() : outputFilter.getStacks();
+		return showingInsert ? insertFilter.getStacks() : extractFilter.getStacks();
 	}
 
 	public boolean isWhiteList()
 	{
-		return showingInput ? inputFilter.isWhiteList : outputFilter.isWhiteList;
+		return showingInsert ? insertFilter.isWhiteList : extractFilter.isWhiteList;
 	}
 
 	public void setWhiteList(boolean whiteList)
 	{
-		if(showingInput)
-			inputFilter.isWhiteList = whiteList;
+		if(showingInsert)
+			insertFilter.isWhiteList = whiteList;
 		else
-			outputFilter.isWhiteList = whiteList;
+			extractFilter.isWhiteList = whiteList;
 	}
 
 	public boolean isEnabled()
 	{
-		return showingInput ? inputFilter.enabled : outputFilter.enabled;
+		return showingInsert ? insertFilter.enabled : extractFilter.enabled;
 	}
 
 	public void setEnabled(boolean enabled)
 	{
-		if(showingInput)
-			inputFilter.enabled = enabled;
+		if(showingInsert)
+			insertFilter.enabled = enabled;
 		else
-			outputFilter.enabled = enabled;
+			extractFilter.enabled = enabled;
 	}
 
 	public int getPriority()
 	{
-		return showingInput ? inputFilter.priority : outputFilter.priority;
+		return showingInsert ? insertFilter.priority : extractFilter.priority;
 	}
 
 	public void setPriority(int priority)
 	{
-		if(showingInput)
-			inputFilter.priority = priority;
+		if(showingInsert)
+			insertFilter.priority = priority;
 		else
-			outputFilter.priority = priority;
+			extractFilter.priority = priority;
 	}
 
 	public void incPriority()
 	{
-		if(showingInput)
-			inputFilter.priority++;
+		if(showingInsert)
+			insertFilter.priority++;
 		else
-			outputFilter.priority++;
+			extractFilter.priority++;
 	}
 
 	public void decPriority()
 	{
-		if(showingInput)
-			inputFilter.priority--;
+		if(showingInsert)
+			insertFilter.priority--;
 		else
-			outputFilter.priority--;
+			extractFilter.priority--;
 	}
 
-	public void setShowInputFilter(boolean showingInput)
+	public void setShowInsertFilter(boolean showingInsert)
 	{
-		this.showingInput = showingInput;
+		this.showingInsert = showingInsert;
 	}
 
 	public static class DirectionFilter

@@ -7,6 +7,9 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import com.theprogrammingturkey.pipes.PipesCore;
+import com.theprogrammingturkey.pipes.network.IPipeNetwork;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
+import com.theprogrammingturkey.pipes.util.UIUtil;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -15,7 +18,10 @@ import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -80,6 +86,44 @@ public class BasePipeBlock extends Block
 		for(EnumFacing side : EnumFacing.VALUES)
 			if(state.getActualState(world, pos).getValue(FACING_MAPPING.get(side).direction).isSegment())
 				addCollisionBoxToList(pos, entityBox, collidingBoxes, FACING_MAPPING.get(side).boundingBox);
+	}
+
+	@Override
+	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ)
+	{
+		if(!world.isRemote)
+		{
+			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForBlockState(state);
+			if(networkManager == null)
+				return true;
+			IPipeNetwork network = networkManager.getNetwork(pos);
+			if(network == null)
+				return true;
+
+			int faceHit = -1;
+			if(hitX > .999 || hitX < 0.001)
+				faceHit = 0;
+			else if(hitY > .999 || hitY < 0.001)
+				faceHit = 1;
+			else if(hitZ > .999 || hitZ < 0.001)
+				faceHit = 2;
+
+			if(hitX < 0.4375 && faceHit != 0)
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.EAST));
+			else if(hitX > 0.5625 && faceHit != 0)
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.WEST));
+			else if(hitY < 0.4375 && faceHit != 1)
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.UP));
+			else if(hitY > 0.5625 && faceHit != 1)
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.DOWN));
+			else if(hitZ < 0.4375 && faceHit != 2)
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.SOUTH));
+			else if(hitZ > 0.5625 && faceHit != 2)
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.NORTH));
+
+			return false;
+		}
+		return super.onBlockActivated(world, pos, state, player, hand, facing, hitX, hitY, hitZ);
 	}
 
 	public int getMetaFromState(IBlockState state)

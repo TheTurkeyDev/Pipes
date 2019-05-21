@@ -1,6 +1,6 @@
 package com.theprogrammingturkey.pipes.packets;
 
-import com.theprogrammingturkey.pipes.network.PipeNetwork;
+import com.theprogrammingturkey.pipes.network.IPipeNetwork;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 
 import io.netty.buffer.ByteBuf;
@@ -61,10 +61,10 @@ public class GetFilterPacket implements IMessage
 				PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerAtPos(ctx.getServerHandler().player.world, message.pos);
 				if(networkManager == null)
 					return null;
-				PipeNetwork network = networkManager.getNetwork(message.pos);
+				IPipeNetwork network = networkManager.getNetwork(message.pos);
 				if(network == null)
 					return null;
-				return new RecieveFilterPacket(message.pos, network.getNetworkInterface().getFilterFromPipe(message.pos, message.side));
+				return new RecieveFilterPacket(message.pos, network.getFilterFromPipe(message.pos, message.side));
 			}
 			return null;
 		}

@@ -1,6 +1,6 @@
 package com.theprogrammingturkey.pipes.packets;
 
-import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.ui.FilterUI;
 import com.theprogrammingturkey.pipes.util.FilterStack;
 
@@ -71,18 +71,18 @@ public class RecieveFilterPacket implements IMessage
 
 		buf.writeByte(filter.facing.getIndex());
 
-		buf.writeBoolean(filter.inputFilter.enabled);
-		buf.writeInt(filter.inputFilter.priority);
-		buf.writeBoolean(filter.inputFilter.isWhiteList);
-		buf.writeInt(filter.inputFilter.getStacks().size());
-		for(FilterStack stack : filter.inputFilter.getStacks())
+		buf.writeBoolean(filter.extractFilter.enabled);
+		buf.writeInt(filter.extractFilter.priority);
+		buf.writeBoolean(filter.extractFilter.isWhiteList);
+		buf.writeInt(filter.extractFilter.getStacks().size());
+		for(FilterStack stack : filter.extractFilter.getStacks())
 			ByteBufUtils.writeItemStack(buf, stack.getAsItemStack());
 
-		buf.writeBoolean(filter.outputFilter.enabled);
-		buf.writeInt(filter.outputFilter.priority);
-		buf.writeBoolean(filter.outputFilter.isWhiteList);
-		buf.writeInt(filter.outputFilter.getStacks().size());
-		for(FilterStack stack : filter.outputFilter.getStacks())
+		buf.writeBoolean(filter.insertFilter.enabled);
+		buf.writeInt(filter.insertFilter.priority);
+		buf.writeBoolean(filter.insertFilter.isWhiteList);
+		buf.writeInt(filter.insertFilter.getStacks().size());
+		for(FilterStack stack : filter.insertFilter.getStacks())
 			ByteBufUtils.writeItemStack(buf, stack.getAsItemStack());
 	}
 
@@ -96,19 +96,19 @@ public class RecieveFilterPacket implements IMessage
 
 		filter = new InterfaceFilter(EnumFacing.VALUES[buf.readByte()]);
 
-		filter.inputFilter.enabled = buf.readBoolean();
-		filter.inputFilter.priority = buf.readInt();
-		filter.inputFilter.isWhiteList = buf.readBoolean();
+		filter.extractFilter.enabled = buf.readBoolean();
+		filter.extractFilter.priority = buf.readInt();
+		filter.extractFilter.isWhiteList = buf.readBoolean();
 		int amount = buf.readInt();
 		for(int i = 0; i < amount; i++)
-			filter.inputFilter.addStackToFilter(new FilterStack(ByteBufUtils.readItemStack(buf)));
+			filter.extractFilter.addStackToFilter(new FilterStack(ByteBufUtils.readItemStack(buf)));
 
-		filter.outputFilter.enabled = buf.readBoolean();
-		filter.outputFilter.priority = buf.readInt();
-		filter.outputFilter.isWhiteList = buf.readBoolean();
+		filter.insertFilter.enabled = buf.readBoolean();
+		filter.insertFilter.priority = buf.readInt();
+		filter.insertFilter.isWhiteList = buf.readBoolean();
 		amount = buf.readInt();
 		for(int i = 0; i < amount; i++)
-			filter.outputFilter.addStackToFilter(new FilterStack(ByteBufUtils.readItemStack(buf)));
+			filter.insertFilter.addStackToFilter(new FilterStack(ByteBufUtils.readItemStack(buf)));
 	}
 
 	public static final class Handler implements IMessageHandler<RecieveFilterPacket, IMessage>

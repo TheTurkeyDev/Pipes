@@ -1,6 +1,6 @@
 package com.theprogrammingturkey.pipes.containers;
 
-import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;

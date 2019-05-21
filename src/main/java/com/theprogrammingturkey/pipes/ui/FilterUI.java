@@ -6,12 +6,11 @@ import org.lwjgl.input.Keyboard;
 
 import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.containers.FilterContainer;
-import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.packets.PipesPacketHandler;
 import com.theprogrammingturkey.pipes.packets.UpdateFilterPacket;
 import com.theprogrammingturkey.pipes.util.FilterStack;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
@@ -57,8 +56,8 @@ public class FilterUI extends GuiContainer
 		super.initGui();
 		this.buttonList.clear();
 		Keyboard.enableRepeatEvents(true);
-		this.buttonList.add(new GuiButton(0, guiLeft + xSize, guiTop, 50, 20, "Import"));
-		this.buttonList.add(new GuiButton(1, guiLeft + xSize, guiTop + 20, 50, 20, "Export"));
+		this.buttonList.add(new GuiButton(0, guiLeft + xSize, guiTop, 50, 20, "Insert"));
+		this.buttonList.add(new GuiButton(1, guiLeft + xSize, guiTop + 20, 50, 20, "Extract"));
 		this.buttonList.add(enabledCheckBox = new GuiCheckBox(2, guiLeft + 10, guiTop + 10, "Enabled", filter.isEnabled()));
 		this.buttonList.add(whitelistButton = new GuiButton(3, guiLeft + 70, guiTop + 5, 50, 20, filter.isWhiteList() ? "Whitelist" : "Blacklist"));
 		this.buttonList.add(new GuiButton(4, guiLeft + 175, guiTop + 5, 15, 20, "-"));
@@ -67,9 +66,9 @@ public class FilterUI extends GuiContainer
 
 	public void drawScreen(int mouseX, int mouseY, float partialTicks)
 	{
-        this.drawDefaultBackground();
-        super.drawScreen(mouseX, mouseY, partialTicks);
-        this.renderHoveredToolTip(mouseX, mouseY);
+		this.drawDefaultBackground();
+		super.drawScreen(mouseX, mouseY, partialTicks);
+		this.renderHoveredToolTip(mouseX, mouseY);
 	}
 
 	protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY)
@@ -179,13 +178,13 @@ public class FilterUI extends GuiContainer
 			boolean flag = false;
 			if(button.id == 0)
 			{
-				filter.setShowInputFilter(true);
+				filter.setShowInsertFilter(true);
 				updateButtons();
 
 			}
 			else if(button.id == 1)
 			{
-				filter.setShowInputFilter(false);
+				filter.setShowInsertFilter(false);
 				updateButtons();
 			}
 			else if(button.id == 2)

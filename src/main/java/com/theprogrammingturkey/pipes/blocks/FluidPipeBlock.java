@@ -1,9 +1,9 @@
 package com.theprogrammingturkey.pipes.blocks;
 
-import com.theprogrammingturkey.pipes.network.PipeNetwork;
+import com.theprogrammingturkey.pipes.network.IPipeNetwork;
+import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
-import com.theprogrammingturkey.pipes.network.interfacing.InterfaceFilter;
 import com.theprogrammingturkey.pipes.util.Util;
 
 import net.minecraft.block.state.IBlockState;
@@ -44,10 +44,10 @@ public class FluidPipeBlock extends BasePipeBlock
 	{
 		if(!world.isRemote)
 		{
-			PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
+			IPipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
 			if(network != null)
 				for(EnumFacing side : EnumFacing.VALUES)
-					network.getNetworkInterface().removeInterfacedBlock(world, pos.offset(side), side.getOpposite());
+					network.removeInterfacedBlock(world, pos, side.getOpposite());
 
 			PipeNetworkManager.FLUID_NETWORK.removePipeFromNetwork(world, pos);
 		}
@@ -59,9 +59,9 @@ public class FluidPipeBlock extends BasePipeBlock
 	{
 		if(!world.isRemote)
 		{
-			PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.addPipeToNetwork(world, pos);
+			IPipeNetwork network = PipeNetworkManager.FLUID_NETWORK.addPipeToNetwork(world, pos);
 			for(EnumFacing side : EnumFacing.VALUES)
-				network.getNetworkInterface().addInterfacedBlock(world, pos.offset(side), side.getOpposite(), new InterfaceFilter(side.getOpposite()));
+				network.addInterfacedBlock(world, pos, side.getOpposite(), new InterfaceFilter(side.getOpposite()));
 		}
 	}
 
@@ -74,8 +74,8 @@ public class FluidPipeBlock extends BasePipeBlock
 			return;
 
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
-		PipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
+		IPipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
 		if(network != null)
-			network.getNetworkInterface().updateInterfacedBlock(world, neighbor, side, new InterfaceFilter(side));
+			network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side));
 	}
 }

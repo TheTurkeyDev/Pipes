@@ -21,8 +21,12 @@ public class GameListener
 		{
 			tick++;
 			PipeNetworkManager.ITEM_NETWORK.tick();
+			PipeNetworkManager.FLUID_NETWORK.tick();
 			if(tick % FORWARDING_TABLE_INTERVAL == 0)
+			{
 				PipeNetworkManager.ITEM_NETWORK.purgeForwardingTable();
+				PipeNetworkManager.FLUID_NETWORK.purgeForwardingTable();
+			}
 		}
 	}
 }
