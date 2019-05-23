@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.util.Util;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -27,12 +31,15 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	private int networkID;
 	private NetworkType type;
 	private List<Long> containedBlockPos = new ArrayList<>();
+	//TODO: PLEASE CHANGE THIS
+	private Map<Long, Map<Long, List<EnumFacing>>> chunkToBlocks = new HashMap<>();
 
 	private Capability<T> holderCap;
 
-	//TODO fix
 	protected HashMap<Long, InterfaceInfo<T>> interfaces = new HashMap<>();
 	protected List<HandlerHolder<T>> toUpdate = new ArrayList<>();
+
+	private boolean networkChanged = true;
 
 	protected Comparator<InterfaceInfo<T>> insertPrioritySort = new Comparator<InterfaceInfo<T>>()
 	{
@@ -57,6 +64,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		this.networkID = networkID;
 		this.type = type;
 		this.holderCap = holderCap;
+		networkChanged = true;
 	}
 
 	@Override
@@ -79,14 +87,17 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 				 * instead of making a new InterfaceInfo every time and only do it when the te
 				 * actually changes.
 				 */
-				//TODO: Find a fix for Furnaces as it changes TE, but then resets to its old te when switching block state
 				InterfaceInfo<T> info = interfaces.get(hash);
 				if(!holder.isTE || holder.teHash != info.teHash)
+				{
 					interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
+					setNetworkChanged();
+				}
 			}
 			else
 			{
 				interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
+				setNetworkChanged();
 			}
 		}
 		this.toUpdate.clear();
@@ -99,12 +110,28 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	@Override
 	public void addBlockPosToNetwork(BlockPos pos)
 	{
-		containedBlockPos.add(pos.toLong());
+		long posLong = pos.toLong();
+		containedBlockPos.add(posLong);
+		long chunkHash = Util.chunkToLong(pos);
+		Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
+		if(containedBlocks == null)
+		{
+			containedBlocks = new HashMap<>();
+			chunkToBlocks.put(chunkHash, containedBlocks);
+		}
+		containedBlocks.put(posLong, new ArrayList<EnumFacing>());
+		setNetworkChanged();
 	}
 
 	public void removeBlockPosFromNetwork(BlockPos pos)
 	{
-		containedBlockPos.remove(pos.toLong());
+		long posLong = pos.toLong();
+		containedBlockPos.remove(posLong);
+		long chunkHash = Util.chunkToLong(pos);
+		Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
+		if(containedBlocks != null)
+			containedBlocks.remove(posLong);
+		setNetworkChanged();
 	}
 
 	public boolean isPosInNetwork(BlockPos pos)
@@ -188,6 +215,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	public void removeInterfacedBlock(World world, BlockPos pos, EnumFacing facing)
 	{
 		interfaces.remove(getKeyHash(pos, facing));
+		setNetworkChanged();
 	}
 
 	public void updateFilter(BlockPos pos, InterfaceFilter filter)
@@ -213,11 +241,6 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		return this.type;
 	}
 
-	public List<Long> getContainedBlockPos()
-	{
-		return containedBlockPos;
-	}
-
 	@SuppressWarnings("unchecked")
 	public void mergeWithNetwork(IPipeNetwork toMerge)
 	{
@@ -226,6 +249,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 			this.containedBlockPos.addAll(toMerge.getcontainedBlockPos());
 			this.interfaces.putAll(((PipeNetwork<T>) toMerge).interfaces);
 		}
+		setNetworkChanged();
 	}
 
 	@Override
@@ -233,12 +257,83 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	{
 		isActive = false;
 		containedBlockPos.clear();
+		this.chunkToBlocks.clear();
+		setNetworkChanged();
 	}
 
 	@Override
 	public boolean isActive()
 	{
 		return isActive;
+	}
+
+	public boolean isInChunk(int x, int z)
+	{
+		return this.chunkToBlocks.containsKey(Util.chunkToLong(x, z));
+	}
+
+	public void setNetworkChanged()
+	{
+		this.networkChanged = true;
+	}
+
+	public boolean shouldSave()
+	{
+		return networkChanged;
+	}
+
+	public void loadNetworkInChunk(World world, int x, int z, NBTTagCompound nbt)
+	{
+		List<Long> blocksContained = new ArrayList<>();
+
+		for(String keyLong : nbt.getKeySet())
+		{
+			Long l = Long.parseLong(keyLong);
+			blocksContained.add(l);
+			NBTTagCompound interfaces = nbt.getCompoundTag(keyLong);
+
+			BlockPos pos = new BlockPos(interfaces.getInteger("x"), interfaces.getInteger("y"), interfaces.getInteger("z"));
+			EnumFacing facing = EnumFacing.byIndex(interfaces.getInteger("facing"));
+
+			InterfaceFilter filter = InterfaceFilter.fromNBT(facing, type, interfaces.getCompoundTag("filter"));
+
+			//TODO: Look into possible chunk boundry issues with the interfaced blocks
+			this.addInterfacedBlock(world, pos, facing, filter);
+		}
+
+		this.setNetworkChanged();
+	}
+
+	public NBTTagCompound saveNetworkInchunk(int x, int z)
+	{
+		NBTTagCompound nbt = new NBTTagCompound();
+
+		Map<Long, List<EnumFacing>> blocksContained = this.chunkToBlocks.get(Util.chunkToLong(x, z));
+
+		for(Entry<Long, List<EnumFacing>> l : blocksContained.entrySet())
+		{
+			for(EnumFacing facing : l.getValue())
+			{
+				long hash = this.getKeyHash(l.getKey(), facing);
+				if(this.interfaces.containsKey(hash))
+				{
+					NBTTagCompound interfaces = new NBTTagCompound();
+
+					InterfaceInfo<T> interfaceInfo = this.interfaces.get(hash);
+					BlockPos pos = BlockPos.fromLong(l.getKey());
+					interfaces.setInteger("x", pos.getX());
+					interfaces.setInteger("y", pos.getY());
+					interfaces.setInteger("z", pos.getZ());
+					interfaces.setInteger("facing", interfaceInfo.facing.getIndex());
+					interfaces.setTag("filter", interfaceInfo.filter.toNBT());
+
+					nbt.setTag(String.valueOf(l), interfaces);
+				}
+			}
+		}
+
+		networkChanged = false;
+		return nbt;
 	}
 
 	public Long getKeyHash(BlockPos pos, EnumFacing facing)
@@ -253,6 +348,18 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		return pos.toLong() | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
 	}
 
+	public Long getKeyHash(long pos, EnumFacing facing)
+	{
+		/*
+		 * Essentially I'm using the upper 3 bits of the Y coordinate value. Based on my maths and
+		 * info found in BlockPos, the Y_SHIFT should be 12 allowing for values of 0-4096, but since
+		 * the y coord should never go that high, I'm using the upper 3 bits to store the facing
+		 * value (0-5) leaving 9 bits left for the y before it overflows (0-512), it's close, but I
+		 * think it'll work. Maybe there's a better way, but idk.
+		 */
+		return pos | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
+	}
+
 	public static IPipeNetwork getNewNetwork(NetworkType type, int networkID)
 	{
 		switch(type)
@@ -261,6 +368,8 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 				return new ItemPipeNetwork(networkID);
 			case FLUID:
 				return new FluidPipeNetwork(networkID);
+			case ENERGY:
+				return new EnergyPipeNetwork(networkID);
 			default:
 				return new ItemPipeNetwork(networkID);
 		}

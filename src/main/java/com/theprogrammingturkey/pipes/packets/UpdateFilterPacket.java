@@ -3,6 +3,7 @@ package com.theprogrammingturkey.pipes.packets;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
 import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 import com.theprogrammingturkey.pipes.util.FilterStack;
 
 import io.netty.buffer.ByteBuf;
@@ -43,6 +44,7 @@ public class UpdateFilterPacket implements IMessage
 		buf.writeInt(pos.getZ());
 
 		buf.writeByte(filter.facing.getIndex());
+		buf.writeByte(filter.getNetworkType().getID());
 
 		buf.writeBoolean(filter.extractFilter.enabled);
 		buf.writeInt(filter.extractFilter.priority);
@@ -64,7 +66,7 @@ public class UpdateFilterPacket implements IMessage
 	{
 		this.pos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
 
-		filter = new InterfaceFilter(EnumFacing.VALUES[buf.readByte()]);
+		filter = new InterfaceFilter(EnumFacing.VALUES[buf.readByte()], NetworkType.getFromID(buf.readInt()));
 
 		filter.extractFilter.enabled = buf.readBoolean();
 		filter.extractFilter.priority = buf.readInt();

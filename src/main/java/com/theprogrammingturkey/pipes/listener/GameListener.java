@@ -20,13 +20,9 @@ public class GameListener
 		if(event.side == Side.SERVER && event.type == Type.SERVER && event.phase == Phase.START)
 		{
 			tick++;
-			PipeNetworkManager.ITEM_NETWORK.tick();
-			PipeNetworkManager.FLUID_NETWORK.tick();
+			PipeNetworkManager.tickManagers();
 			if(tick % FORWARDING_TABLE_INTERVAL == 0)
-			{
-				PipeNetworkManager.ITEM_NETWORK.purgeForwardingTable();
-				PipeNetworkManager.FLUID_NETWORK.purgeForwardingTable();
-			}
+				PipeNetworkManager.purgeForwardingTables();
 		}
 	}
 }

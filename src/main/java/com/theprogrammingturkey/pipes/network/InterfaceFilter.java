@@ -3,9 +3,14 @@ package com.theprogrammingturkey.pipes.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 import com.theprogrammingturkey.pipes.util.FilterStack;
 import com.theprogrammingturkey.pipes.util.ItemStackHelper;
 
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumFacing;
 
 public class InterfaceFilter
@@ -18,9 +23,17 @@ public class InterfaceFilter
 
 	private boolean showingInsert = true;
 
-	public InterfaceFilter(EnumFacing facing)
+	private NetworkType type;
+
+	public InterfaceFilter(EnumFacing facing, NetworkType type)
 	{
 		this.facing = facing;
+		this.type = type;
+	}
+
+	public NetworkType getNetworkType()
+	{
+		return this.type;
 	}
 
 	public boolean hasStackInFilter(FilterStack stack)
@@ -103,6 +116,24 @@ public class InterfaceFilter
 		this.showingInsert = showingInsert;
 	}
 
+	public NBTTagCompound toNBT()
+	{
+		NBTTagCompound nbt = new NBTTagCompound();
+		nbt.setTag("insert", insertFilter.toNBT());
+		nbt.setTag("extract", extractFilter.toNBT());
+		return nbt;
+	}
+
+	public static InterfaceFilter fromNBT(EnumFacing facing, NetworkType type, NBTTagCompound nbt)
+	{
+		InterfaceFilter filter = new InterfaceFilter(facing, type);
+		filter.insertFilter = new DirectionFilter();
+		filter.insertFilter.fromNBT(nbt.getCompoundTag("insert"));
+		filter.extractFilter = new DirectionFilter();
+		filter.extractFilter.fromNBT(nbt.getCompoundTag("extract"));
+		return filter;
+	}
+
 	public static class DirectionFilter
 	{
 		public boolean isWhiteList = false;
@@ -127,6 +158,37 @@ public class InterfaceFilter
 		public List<FilterStack> getStacks()
 		{
 			return this.filterStacks;
+		}
+
+		public void setStacks(FilterStack stack)
+		{
+			if(!hasStackInFilter(stack))
+				filterStacks.add(stack);
+		}
+
+		public NBTTagCompound toNBT()
+		{
+			NBTTagCompound nbt = new NBTTagCompound();
+			nbt.setBoolean("isWhiteList", isWhiteList);
+			nbt.setInteger("priority", priority);
+			nbt.setBoolean("enabled", enabled);
+			NBTTagList filterStacksNBT = new NBTTagList();
+			for(FilterStack fs : filterStacks)
+				filterStacksNBT.appendTag(fs.getAsItemStack().serializeNBT());
+			nbt.setTag("filterStacks", filterStacksNBT);
+			return nbt;
+		}
+
+		public void fromNBT(NBTTagCompound nbt)
+		{
+			isWhiteList = nbt.getBoolean("isWhiteList");
+			priority = nbt.getInteger("priority");
+			enabled = nbt.getBoolean("enabled");
+
+			List<FilterStack> filterStacks = new ArrayList<>();
+			for(NBTBase stackNBT : nbt.getTagList("filterStacks", 10))
+				filterStacks.add(new FilterStack(new ItemStack((NBTTagCompound) stackNBT)));
+			this.filterStacks = filterStacks;
 		}
 	}
 }

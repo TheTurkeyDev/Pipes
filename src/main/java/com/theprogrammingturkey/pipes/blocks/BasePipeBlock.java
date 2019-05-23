@@ -8,7 +8,9 @@ import javax.annotation.Nullable;
 
 import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
+import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 import com.theprogrammingturkey.pipes.util.UIUtil;
 
 import net.minecraft.block.Block;
@@ -18,8 +20,10 @@ import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.IStringSerializable;
@@ -53,11 +57,13 @@ public class BasePipeBlock extends Block
 	};
 
 	private String blockName = "pipes_unnamed";
+	private NetworkType type;
 
-	public BasePipeBlock(String name)
+	public BasePipeBlock(String name, NetworkType type)
 	{
 		super(Material.GROUND);
 		this.blockName = name;
+		this.type = type;
 		this.setHardness(0.5f);
 		this.setTranslationKey(blockName);
 		this.setCreativeTab(PipesCore.modTab);
@@ -124,6 +130,43 @@ public class BasePipeBlock extends Block
 			return false;
 		}
 		return super.onBlockActivated(world, pos, state, player, hand, facing, hitX, hitY, hitZ);
+	}
+
+	@Override
+	public boolean removedByPlayer(IBlockState state, World world, BlockPos pos, EntityPlayer player, boolean willHarvest)
+	{
+		if(!world.isRemote)
+		{
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos);
+			if(network != null)
+				for(EnumFacing side : EnumFacing.VALUES)
+					network.removeInterfacedBlock(world, pos, side.getOpposite());
+
+			PipeNetworkManager.getNetworkManagerForType(type).removePipeFromNetwork(world, pos);
+		}
+		return super.removedByPlayer(state, world, pos, player, willHarvest);
+	}
+
+	@Override
+	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
+	{
+		if(!world.isRemote)
+		{
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).addPipeToNetwork(world, pos);
+			for(EnumFacing side : EnumFacing.VALUES)
+				network.addInterfacedBlock(world, pos, side.getOpposite(), new InterfaceFilter(side.getOpposite(), this.type));
+		}
+	}
+
+	public void observedNeighborChange(IBlockState observerState, World world, BlockPos pos, Block changedBlock, BlockPos neighbor)
+	{
+		if(world.isRemote)
+			return;
+
+		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
+		IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos);
+		if(network != null)
+			network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side, this.type));
 	}
 
 	public int getMetaFromState(IBlockState state)

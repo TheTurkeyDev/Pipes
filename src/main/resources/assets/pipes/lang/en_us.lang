@@ -1,0 +1,7 @@
+itemGroup.pipes=Pipes
+
+tile.item_pipe.name=Item Pipe
+tile.fluid_pipe.name=Fluid Pipe
+tile.energy_pipe.name=Energy Pipe
+
+tile.fluid_pump.name=Fluid Pump

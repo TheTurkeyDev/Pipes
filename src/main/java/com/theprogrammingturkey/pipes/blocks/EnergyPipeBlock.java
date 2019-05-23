@@ -1,24 +1,19 @@
 package com.theprogrammingturkey.pipes.blocks;
 
-import javax.annotation.Nullable;
-
 import com.theprogrammingturkey.pipes.RegistryHelper;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.energy.CapabilityEnergy;
 
-public class ItemPipeBlock extends BasePipeBlock
+public class EnergyPipeBlock extends BasePipeBlock
 {
-	public ItemPipeBlock()
+	public EnergyPipeBlock()
 	{
-		super("item_pipe", NetworkType.ITEM);
+		super("energy_pipe", NetworkType.ENERGY);
 		this.setDefaultState(this.blockState.getBaseState().withProperty(NORTH, EnumAttachType.NONE).withProperty(EAST, EnumAttachType.NONE).withProperty(SOUTH, EnumAttachType.NONE).withProperty(WEST, EnumAttachType.NONE).withProperty(UP, EnumAttachType.NONE).withProperty(DOWN, EnumAttachType.NONE));
 	}
 
@@ -29,19 +24,11 @@ public class ItemPipeBlock extends BasePipeBlock
 		{
 			BlockPos offset = origin.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(neighbor.getBlock().equals(RegistryHelper.ITEM_PIPE))
+			if(neighbor.getBlock().equals(RegistryHelper.ENERGY_PIPE))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
-			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side.getOpposite()))
+			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityEnergy.ENERGY, side.getOpposite()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);
 		}
 		return state;
-	}
-
-	@Deprecated
-	@Nullable
-	public RayTraceResult collisionRayTrace(IBlockState blockState, World worldIn, BlockPos pos, Vec3d start, Vec3d end)
-	{
-		//TODO: change this
-		return this.rayTrace(pos, start, end, blockState.getBoundingBox(worldIn, pos));
 	}
 }

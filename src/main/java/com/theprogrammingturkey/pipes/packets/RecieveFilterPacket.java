@@ -1,6 +1,7 @@
 package com.theprogrammingturkey.pipes.packets;
 
 import com.theprogrammingturkey.pipes.network.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 import com.theprogrammingturkey.pipes.ui.FilterUI;
 import com.theprogrammingturkey.pipes.util.FilterStack;
 
@@ -70,6 +71,7 @@ public class RecieveFilterPacket implements IMessage
 		buf.writeInt(pos.getZ());
 
 		buf.writeByte(filter.facing.getIndex());
+		buf.writeInt(filter.getNetworkType().getID());
 
 		buf.writeBoolean(filter.extractFilter.enabled);
 		buf.writeInt(filter.extractFilter.priority);
@@ -94,7 +96,7 @@ public class RecieveFilterPacket implements IMessage
 
 		this.pos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
 
-		filter = new InterfaceFilter(EnumFacing.VALUES[buf.readByte()]);
+		filter = new InterfaceFilter(EnumFacing.VALUES[buf.readByte()], NetworkType.getFromID(buf.readInt()));
 
 		filter.extractFilter.enabled = buf.readBoolean();
 		filter.extractFilter.priority = buf.readInt();

@@ -4,6 +4,7 @@ import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
 import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -41,12 +42,12 @@ public class FluidPumpBlock extends Block
 	{
 		if(!world.isRemote)
 		{
-			IPipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).getNetwork(pos);
 			if(network != null)
 				for(EnumFacing side : EnumFacing.VALUES)
 					network.removeInterfacedBlock(world, pos, side.getOpposite());
 
-			PipeNetworkManager.FLUID_NETWORK.removePipeFromNetwork(world, pos);
+			PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).removePipeFromNetwork(world, pos);
 		}
 		return super.removedByPlayer(state, world, pos, player, willHarvest);
 	}
@@ -56,7 +57,7 @@ public class FluidPumpBlock extends Block
 	{
 		if(!world.isRemote)
 		{
-			IPipeNetwork network = PipeNetworkManager.FLUID_NETWORK.addPipeToNetwork(world, pos);
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).addPipeToNetwork(world, pos);
 			EnumFacing side = state.getValue(FACING).getOpposite();
 			network.addInterfacedBlock(world, pos, side, getDefaultFilter(side));
 		}
@@ -71,9 +72,9 @@ public class FluidPumpBlock extends Block
 			return;
 
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
-		IPipeNetwork network = PipeNetworkManager.FLUID_NETWORK.getNetwork(pos);
+		IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).getNetwork(pos);
 		if(network != null)
-			network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side));
+			network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side, NetworkType.FLUID));
 	}
 
 	public String getBlockName()
@@ -83,7 +84,7 @@ public class FluidPumpBlock extends Block
 
 	public InterfaceFilter getDefaultFilter(EnumFacing side)
 	{
-		InterfaceFilter filter = new InterfaceFilter(side);
+		InterfaceFilter filter = new InterfaceFilter(side, NetworkType.FLUID);
 		filter.insertFilter.enabled = false;
 		filter.extractFilter.enabled = true;
 		return filter;

@@ -18,8 +18,14 @@ import net.minecraft.world.World;
 
 public class PipeNetworkManager
 {
-	public static final PipeNetworkManager ITEM_NETWORK = new PipeNetworkManager(NetworkType.ITEM);
-	public static final PipeNetworkManager FLUID_NETWORK = new PipeNetworkManager(NetworkType.FLUID);
+	private static final Map<NetworkType, PipeNetworkManager> NETWORK_MANAGERS = new HashMap<NetworkType, PipeNetworkManager>();
+
+	static
+	{
+		NETWORK_MANAGERS.put(NetworkType.ITEM, new PipeNetworkManager(NetworkType.ITEM));
+		NETWORK_MANAGERS.put(NetworkType.FLUID, new PipeNetworkManager(NetworkType.FLUID));
+		NETWORK_MANAGERS.put(NetworkType.ENERGY, new PipeNetworkManager(NetworkType.ENERGY));
+	}
 
 	public static PipeNetworkManager getNetworkManagerAtPos(World world, BlockPos pos)
 	{
@@ -29,10 +35,37 @@ public class PipeNetworkManager
 	public static PipeNetworkManager getNetworkManagerForBlockState(IBlockState state)
 	{
 		if(Util.areBlockAndTypeEqual(NetworkType.ITEM, state.getBlock()))
-			return ITEM_NETWORK;
+			return NETWORK_MANAGERS.get(NetworkType.ITEM);
 		else if(Util.areBlockAndTypeEqual(NetworkType.FLUID, state.getBlock()))
-			return FLUID_NETWORK;
+			return NETWORK_MANAGERS.get(NetworkType.FLUID);
+		else if(Util.areBlockAndTypeEqual(NetworkType.ENERGY, state.getBlock()))
+			return NETWORK_MANAGERS.get(NetworkType.ENERGY);
 		return null;
+	}
+
+	public static PipeNetworkManager getNetworkManagerForType(NetworkType type)
+	{
+		return NETWORK_MANAGERS.get(type);
+	}
+
+	public static void tickManagers()
+	{
+		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
+			networkManager.tick();
+	}
+
+	public static void purgeForwardingTables()
+	{
+		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
+			networkManager.purgeForwardingTable();
+	}
+
+	public static List<IPipeNetwork> getAllNetworksToSave(int x, int z)
+	{
+		List<IPipeNetwork> toReturn = new ArrayList<>();
+		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
+			toReturn.addAll(networkManager.getNetworksToSave(x, z));
+		return toReturn;
 	}
 
 	public int nextID = 0;
@@ -62,6 +95,15 @@ public class PipeNetworkManager
 			networks.remove(i);
 
 		deadNetworks.clear();
+	}
+
+	public List<IPipeNetwork> getNetworksToSave(int x, int z)
+	{
+		List<IPipeNetwork> toReturn = new ArrayList<>();
+		for(IPipeNetwork network : networks.values())
+			if(network.isInChunk(x, z))
+				toReturn.add(network);
+		return toReturn;
 	}
 
 	public IPipeNetwork addPipeToNetwork(World world, BlockPos pos)
@@ -218,6 +260,16 @@ public class PipeNetworkManager
 		deleteNetwork(otherNetwork);
 	}
 
+	public IPipeNetwork getOrInitNewNetwork(Integer id, NetworkType type)
+	{
+		if(this.networks.containsKey(id))
+			return this.networks.get(id);
+
+		IPipeNetwork network = PipeNetwork.getNewNetwork(type, nextID++);
+		networks.put(network.getNetworkID(), network);
+		return network;
+	}
+
 	public void deleteNetwork(IPipeNetwork network)
 	{
 		networks.remove(network.getNetworkID());
@@ -267,6 +319,26 @@ public class PipeNetworkManager
 
 	public enum NetworkType
 	{
-		ITEM, FLUID, ENERGY;
+		ITEM(0), FLUID(1), ENERGY(2);
+
+		private int id;
+
+		NetworkType(int id)
+		{
+			this.id = id;
+		}
+
+		public int getID()
+		{
+			return this.id;
+		}
+
+		public static NetworkType getFromID(int id)
+		{
+			for(NetworkType type : NetworkType.values())
+				if(type.getID() == id)
+					return type;
+			return ITEM;
+		}
 	}
 }
