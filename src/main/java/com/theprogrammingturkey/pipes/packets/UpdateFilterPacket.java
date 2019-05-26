@@ -44,7 +44,7 @@ public class UpdateFilterPacket implements IMessage
 		buf.writeInt(pos.getZ());
 
 		buf.writeByte(filter.facing.getIndex());
-		buf.writeByte(filter.getNetworkType().getID());
+		buf.writeInt(filter.getNetworkType().getID());
 
 		buf.writeBoolean(filter.extractFilter.enabled);
 		buf.writeInt(filter.extractFilter.priority);

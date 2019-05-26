@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
@@ -18,6 +19,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class WorldListener
 {
+	public static List<String> loadingChunk = new ArrayList<String>();
+	
 	private File dataDir;
 
 	@SubscribeEvent
@@ -33,7 +36,15 @@ public class WorldListener
 
 			int x = event.getChunk().x;
 			int z = event.getChunk().z;
-			File file = new File(dataDir, "c." + x + "." + z + ".dat");
+			
+			String chunk = x + "." + z;
+			
+			if(loadingChunk.contains(chunk))
+				return;
+			
+			loadingChunk.add(chunk);
+			
+			File file = new File(dataDir, "c." + chunk + ".dat");
 			if(file.exists())
 			{
 				NBTTagCompound nbtdata;
@@ -45,6 +56,7 @@ public class WorldListener
 				} catch(IOException e)
 				{
 					e.printStackTrace();
+					loadingChunk.remove(chunk);
 					return;
 				}
 
@@ -64,8 +76,9 @@ public class WorldListener
 						network.loadNetworkInChunk(event.getWorld(), x, z, pipesNBT);
 					}
 				}
-
 			}
+			
+			loadingChunk.remove(chunk);
 		}
 	}
 

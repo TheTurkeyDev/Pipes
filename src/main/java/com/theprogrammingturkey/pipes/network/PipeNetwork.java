@@ -93,12 +93,32 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 				InterfaceInfo<T> info = interfaces.get(hash);
 				if(!holder.isTE || holder.teHash != info.teHash)
 				{
+					long chunkHash = Util.chunkToLong(holder.pos);
+					Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
+					long posLong = holder.pos.toLong();
+					List<EnumFacing> facingPos = containedBlocks.get(posLong);
+					if(facingPos == null)
+					{
+						facingPos = new ArrayList<EnumFacing>();
+						containedBlocks.put(posLong, facingPos);
+					}
+					facingPos.add(holder.facing);
 					interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
 					setNetworkChanged();
 				}
 			}
 			else
 			{
+				long chunkHash = Util.chunkToLong(holder.pos);
+				Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
+				long posLong = holder.pos.toLong();
+				List<EnumFacing> facingPos = containedBlocks.get(posLong);
+				if(facingPos == null)
+				{
+					facingPos = new ArrayList<EnumFacing>();
+					containedBlocks.put(posLong, facingPos);
+				}
+				facingPos.add(holder.facing);
 				interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
 				setNetworkChanged();
 			}
