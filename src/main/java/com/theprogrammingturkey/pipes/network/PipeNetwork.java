@@ -10,7 +10,9 @@ import java.util.Map.Entry;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 import com.theprogrammingturkey.pipes.util.Util;
 
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -19,6 +21,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import scala.actors.threadpool.Arrays;
 
 public abstract class PipeNetwork<T> implements IPipeNetwork
 {
@@ -290,15 +293,20 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		{
 			Long l = Long.parseLong(keyLong);
 			blocksContained.add(l);
-			NBTTagCompound interfaces = nbt.getCompoundTag(keyLong);
+			NBTTagCompound pipe = nbt.getCompoundTag(keyLong);
 
-			BlockPos pos = new BlockPos(interfaces.getInteger("x"), interfaces.getInteger("y"), interfaces.getInteger("z"));
-			EnumFacing facing = EnumFacing.byIndex(interfaces.getInteger("facing"));
+			BlockPos pos = new BlockPos(pipe.getInteger("x"), pipe.getInteger("y"), pipe.getInteger("z"));
 
-			InterfaceFilter filter = InterfaceFilter.fromNBT(facing, type, interfaces.getCompoundTag("filter"));
+			NBTTagList interfaces = pipe.getTagList("interfaces", 10);
+			for(NBTBase interfaceBase : interfaces)
+			{
+				NBTTagCompound interfaceNBT = (NBTTagCompound) interfaceBase;
+				EnumFacing facing = EnumFacing.byIndex(interfaceNBT.getInteger("facing"));
+				InterfaceFilter filter = InterfaceFilter.fromNBT(facing, type, interfaceNBT.getCompoundTag("filter"));
 
-			//TODO: Look into possible chunk boundry issues with the interfaced blocks
-			this.addInterfacedBlock(world, pos, facing, filter);
+				//TODO: Look into possible chunk boundry issues with the interfaced blocks
+				this.addInterfacedBlock(world, pos, facing, filter);
+			}
 		}
 
 		this.setNetworkChanged();
@@ -312,22 +320,27 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 
 		for(Entry<Long, List<EnumFacing>> l : blocksContained.entrySet())
 		{
+			NBTTagCompound pipeNBT = new NBTTagCompound();
+			BlockPos pos = BlockPos.fromLong(l.getKey());
+			pipeNBT.setInteger("x", pos.getX());
+			pipeNBT.setInteger("y", pos.getY());
+			pipeNBT.setInteger("z", pos.getZ());
+			NBTTagList interfaces = new NBTTagList();
+			pipeNBT.setTag("interfaces", interfaces);
+			nbt.setTag(String.valueOf(l.getKey()), pipeNBT);
+
 			for(EnumFacing facing : l.getValue())
 			{
 				long hash = this.getKeyHash(l.getKey(), facing);
 				if(this.interfaces.containsKey(hash))
 				{
-					NBTTagCompound interfaces = new NBTTagCompound();
-
+					NBTTagCompound face = new NBTTagCompound();
 					InterfaceInfo<T> interfaceInfo = this.interfaces.get(hash);
-					BlockPos pos = BlockPos.fromLong(l.getKey());
-					interfaces.setInteger("x", pos.getX());
-					interfaces.setInteger("y", pos.getY());
-					interfaces.setInteger("z", pos.getZ());
-					interfaces.setInteger("facing", interfaceInfo.facing.getIndex());
-					interfaces.setTag("filter", interfaceInfo.filter.toNBT());
 
-					nbt.setTag(String.valueOf(l), interfaces);
+					face.setInteger("facing", interfaceInfo.facing.getIndex());
+					face.setTag("filter", interfaceInfo.filter.toNBT());
+
+					interfaces.appendTag(face);
 				}
 			}
 		}
@@ -338,14 +351,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 
 	public Long getKeyHash(BlockPos pos, EnumFacing facing)
 	{
-		/*
-		 * Essentially I'm using the upper 3 bits of the Y coordinate value. Based on my maths and
-		 * info found in BlockPos, the Y_SHIFT should be 12 allowing for values of 0-4096, but since
-		 * the y coord should never go that high, I'm using the upper 3 bits to store the facing
-		 * value (0-5) leaving 9 bits left for the y before it overflows (0-512), it's close, but I
-		 * think it'll work. Maybe there's a better way, but idk.
-		 */
-		return pos.toLong() | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
+		return getKeyHash(pos.toLong(), facing);
 	}
 
 	public Long getKeyHash(long pos, EnumFacing facing)

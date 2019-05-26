@@ -48,6 +48,8 @@ public class WorldListener
 					return;
 				}
 
+				System.out.println(nbtdata);
+
 				if(nbtdata != null)
 				{
 					for(String key : nbtdata.getKeySet())
@@ -99,13 +101,14 @@ public class WorldListener
 				try
 				{
 					file.createNewFile();
-					return;
 				} catch(IOException e)
 				{
 					e.printStackTrace();
 				}
 			}
-
+			
+			System.out.println(nbtdata);
+			
 			try
 			{
 				FileOutputStream os = new FileOutputStream(file);
