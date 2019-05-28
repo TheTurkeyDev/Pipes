@@ -102,7 +102,7 @@ public class BasePipeBlock extends Block
 			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForBlockState(state);
 			if(networkManager == null)
 				return true;
-			IPipeNetwork network = networkManager.getNetwork(pos);
+			IPipeNetwork network = networkManager.getNetwork(pos, world.provider.getDimension());
 			if(network == null)
 				return true;
 
@@ -137,7 +137,7 @@ public class BasePipeBlock extends Block
 	{
 		if(!world.isRemote)
 		{
-			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos);
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos, world.provider.getDimension());
 			if(network != null)
 				for(EnumFacing side : EnumFacing.VALUES)
 					network.removeInterfacedBlock(world, pos, side.getOpposite());
@@ -160,13 +160,13 @@ public class BasePipeBlock extends Block
 
 	public void observedNeighborChange(IBlockState observerState, World world, BlockPos pos, Block changedBlock, BlockPos neighbor)
 	{
-		if(world.isRemote)
-			return;
-
-		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
-		IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos);
-		if(network != null)
-			network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side, this.type));
+		if(!world.isRemote)
+		{
+			EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos, world.provider.getDimension());
+			if(network != null)
+				network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side, this.type));
+		}
 	}
 
 	public int getMetaFromState(IBlockState state)

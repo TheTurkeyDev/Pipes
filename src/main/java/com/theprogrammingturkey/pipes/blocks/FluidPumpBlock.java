@@ -42,7 +42,7 @@ public class FluidPumpBlock extends Block
 	{
 		if(!world.isRemote)
 		{
-			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).getNetwork(pos);
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).getNetwork(pos, world.provider.getDimension());
 			if(network != null)
 				for(EnumFacing side : EnumFacing.VALUES)
 					network.removeInterfacedBlock(world, pos, side.getOpposite());
@@ -72,7 +72,7 @@ public class FluidPumpBlock extends Block
 			return;
 
 		EnumFacing side = EnumFacing.getFacingFromVector(pos.getX() - neighbor.getX(), pos.getY() - neighbor.getY(), pos.getZ() - neighbor.getZ());
-		IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).getNetwork(pos);
+		IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).getNetwork(pos, world.provider.getDimension());
 		if(network != null)
 			network.updateInterfacedBlock(world, pos, side, new InterfaceFilter(side, NetworkType.FLUID));
 	}

@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 import com.theprogrammingturkey.pipes.util.Util;
@@ -21,7 +20,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import scala.actors.threadpool.Arrays;
 
 public abstract class PipeNetwork<T> implements IPipeNetwork
 {
@@ -32,10 +30,10 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 
 	private boolean isActive = true;
 	private int networkID;
+	private int dimID;
 	private NetworkType type;
 	private List<Long> containedBlockPos = new ArrayList<>();
-	//TODO: PLEASE CHANGE THIS
-	private Map<Long, Map<Long, List<EnumFacing>>> chunkToBlocks = new HashMap<>();
+	private Map<Long, List<Long>> chunkToBlocks = new HashMap<>();
 
 	private Capability<T> holderCap;
 
@@ -43,6 +41,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	protected List<HandlerHolder<T>> toUpdate = new ArrayList<>();
 
 	private boolean networkChanged = true;
+	private boolean requiresUpdate = false;
 
 	protected Comparator<InterfaceInfo<T>> insertPrioritySort = new Comparator<InterfaceInfo<T>>()
 	{
@@ -62,9 +61,10 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		}
 	};
 
-	public PipeNetwork(int networkID, NetworkType type, Capability<T> holderCap)
+	public PipeNetwork(int networkID, int dimID, NetworkType type, Capability<T> holderCap)
 	{
 		this.networkID = networkID;
+		this.dimID = dimID;
 		this.type = type;
 		this.holderCap = holderCap;
 		networkChanged = true;
@@ -93,32 +93,12 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 				InterfaceInfo<T> info = interfaces.get(hash);
 				if(!holder.isTE || holder.teHash != info.teHash)
 				{
-					long chunkHash = Util.chunkToLong(holder.pos);
-					Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
-					long posLong = holder.pos.toLong();
-					List<EnumFacing> facingPos = containedBlocks.get(posLong);
-					if(facingPos == null)
-					{
-						facingPos = new ArrayList<EnumFacing>();
-						containedBlocks.put(posLong, facingPos);
-					}
-					facingPos.add(holder.facing);
 					interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
 					setNetworkChanged();
 				}
 			}
 			else
 			{
-				long chunkHash = Util.chunkToLong(holder.pos);
-				Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
-				long posLong = holder.pos.toLong();
-				List<EnumFacing> facingPos = containedBlocks.get(posLong);
-				if(facingPos == null)
-				{
-					facingPos = new ArrayList<EnumFacing>();
-					containedBlocks.put(posLong, facingPos);
-				}
-				facingPos.add(holder.facing);
 				interfaces.put(hash, new InterfaceInfo<T>(holder.handler, holder.filter, holder.facing, holder.teHash));
 				setNetworkChanged();
 			}
@@ -126,6 +106,38 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		this.toUpdate.clear();
 
 		processTransfers();
+	}
+
+	public void update(World world)
+	{
+		this.requiresUpdate = false;
+		for(Long posLong : this.containedBlockPos)
+		{
+			BlockPos pos = BlockPos.fromLong(posLong);
+
+			for(EnumFacing facing : EnumFacing.VALUES)
+			{
+				InterfaceFilter filter = new InterfaceFilter(facing.getOpposite(), this.type);
+				long hash = this.getKeyHash(pos, facing.getOpposite());
+
+				//Check both the loaded and queued interfaces for the capholder to update
+				if(interfaces.containsKey(hash))
+					filter = interfaces.get(hash).filter;
+				else
+					for(HandlerHolder<T> holder : this.toUpdate)
+						if(holder.handlerPos.equals(pos.offset(facing)) && holder.facing == facing.getOpposite())
+							filter = holder.filter;
+
+				addInterfacedBlock(world, pos, facing.getOpposite(), filter);
+			}
+		}
+
+		interfaces.clear();
+	}
+
+	public boolean requiresUpdate()
+	{
+		return this.requiresUpdate;
 	}
 
 	public abstract void processTransfers();
@@ -136,13 +148,13 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		long posLong = pos.toLong();
 		containedBlockPos.add(posLong);
 		long chunkHash = Util.chunkToLong(pos);
-		Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
+		List<Long> containedBlocks = chunkToBlocks.get(chunkHash);
 		if(containedBlocks == null)
 		{
-			containedBlocks = new HashMap<>();
+			containedBlocks = new ArrayList<>();
 			chunkToBlocks.put(chunkHash, containedBlocks);
 		}
-		containedBlocks.put(posLong, new ArrayList<EnumFacing>());
+		containedBlocks.add(posLong);
 		setNetworkChanged();
 	}
 
@@ -151,7 +163,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		long posLong = pos.toLong();
 		containedBlockPos.remove(posLong);
 		long chunkHash = Util.chunkToLong(pos);
-		Map<Long, List<EnumFacing>> containedBlocks = chunkToBlocks.get(chunkHash);
+		List<Long> containedBlocks = chunkToBlocks.get(chunkHash);
 		if(containedBlocks != null)
 			containedBlocks.remove(posLong);
 		setNetworkChanged();
@@ -249,13 +261,20 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 
 	public InterfaceFilter getFilterFromPipe(BlockPos pos, EnumFacing facing)
 	{
-		return interfaces.get(this.getKeyHash(pos, facing)).filter;
+		InterfaceInfo<?> posInterfaces = interfaces.get(this.getKeyHash(pos, facing));
+		return posInterfaces == null ? null : posInterfaces.filter;
 	}
 
 	@Override
 	public int getNetworkID()
 	{
 		return this.networkID;
+	}
+
+	@Override
+	public int getDimID()
+	{
+		return this.dimID;
 	}
 
 	@Override
@@ -308,6 +327,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	public void loadNetworkInChunk(World world, int x, int z, NBTTagCompound nbt)
 	{
 		List<Long> blocksContained = new ArrayList<>();
+		PipeNetworkManager manager = PipeNetworkManager.getNetworkManagerForType(this.type);
 
 		for(String keyLong : nbt.getKeySet())
 		{
@@ -316,6 +336,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 			NBTTagCompound pipe = nbt.getCompoundTag(keyLong);
 
 			BlockPos pos = new BlockPos(pipe.getInteger("x"), pipe.getInteger("y"), pipe.getInteger("z"));
+			manager.addPosToNetwork(this, pos);
 
 			NBTTagList interfaces = pipe.getTagList("interfaces", 10);
 			for(NBTBase interfaceBase : interfaces)
@@ -329,6 +350,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 			}
 		}
 
+		requiresUpdate = true;
 		this.setNetworkChanged();
 	}
 
@@ -336,22 +358,20 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	{
 		NBTTagCompound nbt = new NBTTagCompound();
 
-		Map<Long, List<EnumFacing>> blocksContained = this.chunkToBlocks.get(Util.chunkToLong(x, z));
-
-		for(Entry<Long, List<EnumFacing>> l : blocksContained.entrySet())
+		for(Long l : this.chunkToBlocks.get(Util.chunkToLong(x, z)))
 		{
 			NBTTagCompound pipeNBT = new NBTTagCompound();
-			BlockPos pos = BlockPos.fromLong(l.getKey());
+			BlockPos pos = BlockPos.fromLong(l);
 			pipeNBT.setInteger("x", pos.getX());
 			pipeNBT.setInteger("y", pos.getY());
 			pipeNBT.setInteger("z", pos.getZ());
 			NBTTagList interfaces = new NBTTagList();
 			pipeNBT.setTag("interfaces", interfaces);
-			nbt.setTag(String.valueOf(l.getKey()), pipeNBT);
+			nbt.setTag(String.valueOf(l), pipeNBT);
 
-			for(EnumFacing facing : l.getValue())
+			for(EnumFacing facing : EnumFacing.VALUES)
 			{
-				long hash = this.getKeyHash(l.getKey(), facing);
+				long hash = this.getKeyHash(l, facing);
 				if(this.interfaces.containsKey(hash))
 				{
 					NBTTagCompound face = new NBTTagCompound();
@@ -386,18 +406,18 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		return pos | ((long) facing.getIndex() & FACING_MASK) << FACING_BIT_SHIFT;
 	}
 
-	public static IPipeNetwork getNewNetwork(NetworkType type, int networkID)
+	public static IPipeNetwork getNewNetwork(NetworkType type, int networkID, int dimID)
 	{
 		switch(type)
 		{
 			case ITEM:
-				return new ItemPipeNetwork(networkID);
+				return new ItemPipeNetwork(networkID, dimID);
 			case FLUID:
-				return new FluidPipeNetwork(networkID);
+				return new FluidPipeNetwork(networkID, dimID);
 			case ENERGY:
-				return new EnergyPipeNetwork(networkID);
+				return new EnergyPipeNetwork(networkID, dimID);
 			default:
-				return new ItemPipeNetwork(networkID);
+				return new ItemPipeNetwork(networkID, dimID);
 		}
 	}
 }

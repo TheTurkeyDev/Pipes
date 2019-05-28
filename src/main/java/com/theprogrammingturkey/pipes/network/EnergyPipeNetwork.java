@@ -13,9 +13,9 @@ import net.minecraftforge.energy.IEnergyStorage;
 public class EnergyPipeNetwork extends PipeNetwork<IEnergyStorage>
 {
 
-	public EnergyPipeNetwork(int networkID)
+	public EnergyPipeNetwork(int networkID, int dimID)
 	{
-		super(networkID, NetworkType.ENERGY, CapabilityEnergy.ENERGY);
+		super(networkID, dimID, NetworkType.ENERGY, CapabilityEnergy.ENERGY);
 	}
 
 	@Override

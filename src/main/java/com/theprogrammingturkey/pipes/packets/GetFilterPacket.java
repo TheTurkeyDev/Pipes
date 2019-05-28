@@ -6,6 +6,7 @@ import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -58,10 +59,11 @@ public class GetFilterPacket implements IMessage
 		{
 			if(ctx.side == Side.SERVER)
 			{
-				PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerAtPos(ctx.getServerHandler().player.world, message.pos);
+				World world = ctx.getServerHandler().player.world;
+				PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerAtPos(world, message.pos);
 				if(networkManager == null)
 					return null;
-				IPipeNetwork network = networkManager.getNetwork(message.pos);
+				IPipeNetwork network = networkManager.getNetwork(message.pos, world.provider.getDimension());
 				if(network == null)
 					return null;
 				return new RecieveFilterPacket(message.pos, network.getFilterFromPipe(message.pos, message.side));

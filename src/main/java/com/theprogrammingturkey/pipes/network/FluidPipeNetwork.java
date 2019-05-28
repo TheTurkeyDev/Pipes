@@ -20,9 +20,9 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class FluidPipeNetwork extends PipeNetwork<IFluidHandler>
 {
-	public FluidPipeNetwork(int networkID)
+	public FluidPipeNetwork(int networkID, int dimID)
 	{
-		super(networkID, NetworkType.FLUID, CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
+		super(networkID, dimID, NetworkType.FLUID, CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
 	}
 
 	@Override

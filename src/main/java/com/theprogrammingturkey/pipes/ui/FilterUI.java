@@ -29,6 +29,8 @@ public class FilterUI extends GuiContainer
 	private InterfaceFilter filter;
 	private BlockPos pos;
 
+	private GuiButton insertButton;
+	private GuiButton extractButton;
 	private GuiCheckBox enabledCheckBox;
 	private GuiButton whitelistButton;
 
@@ -57,8 +59,11 @@ public class FilterUI extends GuiContainer
 		super.initGui();
 		this.buttonList.clear();
 		Keyboard.enableRepeatEvents(true);
-		this.buttonList.add(new GuiButton(0, guiLeft + xSize, guiTop, 50, 20, "Insert"));
-		this.buttonList.add(new GuiButton(1, guiLeft + xSize, guiTop + 20, 50, 20, "Extract"));
+		this.buttonList.add(insertButton = new GuiButton(0, guiLeft + xSize, guiTop, 50, 20, "Insert"));
+		//TODO: Make the color customizable. possibly for colorblind?
+		insertButton.packedFGColour = 0x00FF00;
+		insertButton.enabled = false;
+		this.buttonList.add(extractButton = new GuiButton(1, guiLeft + xSize, guiTop + 20, 50, 20, "Extract"));
 		this.buttonList.add(enabledCheckBox = new GuiCheckBox(2, guiLeft + 10, guiTop + 10, "Enabled", filter.isEnabled()));
 		if(this.filter.getNetworkType() != NetworkType.ENERGY)
 			this.buttonList.add(whitelistButton = new GuiButton(3, guiLeft + 70, guiTop + 5, 50, 20, filter.isWhiteList() ? "Whitelist" : "Blacklist"));
@@ -180,11 +185,19 @@ public class FilterUI extends GuiContainer
 			boolean flag = false;
 			if(button.id == 0)
 			{
+				insertButton.packedFGColour = 0x00FF00;
+				insertButton.enabled = false;
+				extractButton.packedFGColour = 0xFFFFFF;
+				extractButton.enabled = true;
 				filter.setShowInsertFilter(true);
 				updateButtons();
 			}
 			else if(button.id == 1)
 			{
+				extractButton.packedFGColour = 0x00FF00;
+				extractButton.enabled = false;
+				insertButton.packedFGColour = 0xFFFFFF;
+				insertButton.enabled = true;
 				filter.setShowInsertFilter(false);
 				updateButtons();
 			}

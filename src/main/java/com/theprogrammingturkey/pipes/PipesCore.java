@@ -2,6 +2,7 @@ package com.theprogrammingturkey.pipes;
 
 import org.apache.logging.log4j.Logger;
 
+import com.theprogrammingturkey.pipes.commands.PipesCommands;
 import com.theprogrammingturkey.pipes.listener.GameListener;
 import com.theprogrammingturkey.pipes.listener.WorldListener;
 import com.theprogrammingturkey.pipes.packets.PipesPacketHandler;
@@ -13,6 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
 @Mod(modid = PipesCore.MODID, name = PipesCore.NAME, version = PipesCore.VERSION)
 public class PipesCore
@@ -46,5 +48,11 @@ public class PipesCore
 	public void init(FMLInitializationEvent event)
 	{
 
+	}
+	
+	@EventHandler
+	public void serverLoad(FMLServerStartingEvent event)
+	{
+		event.registerServerCommand(new PipesCommands());
 	}
 }

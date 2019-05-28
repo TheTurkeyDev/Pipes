@@ -13,6 +13,7 @@ import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -20,31 +21,33 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class WorldListener
 {
 	public static List<String> loadingChunk = new ArrayList<String>();
-	
+
 	private File dataDir;
 
 	@SubscribeEvent
 	public void onChunkLoad(ChunkDataEvent.Load event)
 	{
-		if(!event.getWorld().isRemote && event.getWorld() instanceof WorldServer)
+		World world = event.getWorld();
+		if(!world.isRemote && world instanceof WorldServer)
 		{
 			if(dataDir == null) //Delayed down here do that world has time to be initialized first.
 			{
-				dataDir = new File(((WorldServer) event.getWorld()).getChunkSaveLocation(), "data/pipes");
+				dataDir = new File(((WorldServer) world).getChunkSaveLocation(), "data/pipes");
 				dataDir.mkdirs();
 			}
 
+			int dimID = world.provider.getDimension();
 			int x = event.getChunk().x;
 			int z = event.getChunk().z;
-			
+
 			String chunk = x + "." + z;
-			
+
 			if(loadingChunk.contains(chunk))
 				return;
-			
+
 			loadingChunk.add(chunk);
-			
-			File file = new File(dataDir, "c." + chunk + ".dat");
+
+			File file = new File(dataDir, "c." + dimID + "." + chunk + ".dat");
 			if(file.exists())
 			{
 				NBTTagCompound nbtdata;
@@ -72,12 +75,12 @@ public class WorldListener
 						NBTTagCompound pipesNBT = networkNBT.getCompoundTag("pipes");
 
 						PipeNetworkManager manager = PipeNetworkManager.getNetworkManagerForType(type);
-						IPipeNetwork network = manager.getOrInitNewNetwork(id, type);
+						IPipeNetwork network = manager.getOrInitNewNetwork(id, type, dimID);
 						network.loadNetworkInChunk(event.getWorld(), x, z, pipesNBT);
 					}
 				}
 			}
-			
+
 			loadingChunk.remove(chunk);
 		}
 	}
@@ -85,15 +88,18 @@ public class WorldListener
 	@SubscribeEvent
 	public void onChunkSave(ChunkDataEvent.Save event)
 	{
-		if(!event.getWorld().isRemote && event.getWorld() instanceof WorldServer)
+		World world = event.getWorld();
+		if(!world.isRemote && world instanceof WorldServer)
 		{
 			if(dataDir == null) //Delayed down here do that world has time to be initialized first.
 			{
-				dataDir = new File(((WorldServer) event.getWorld()).getChunkSaveLocation(), "data/pipes");
+				dataDir = new File(((WorldServer) world).getChunkSaveLocation(), "data/pipes");
 				dataDir.mkdirs();
 			}
 
-			List<IPipeNetwork> networksToSave = PipeNetworkManager.getAllNetworksToSave(event.getChunk().x, event.getChunk().z);
+			int dimID = world.provider.getDimension();
+
+			List<IPipeNetwork> networksToSave = PipeNetworkManager.getAllNetworksToSave(dimID, event.getChunk().x, event.getChunk().z);
 			if(networksToSave.isEmpty())
 				return;
 
@@ -105,10 +111,10 @@ public class WorldListener
 				networkNBT.setInteger("id", network.getNetworkID());
 				networkNBT.setInteger("type", network.getNetworkType().getID());
 				networkNBT.setTag("pipes", network.saveNetworkInchunk(event.getChunk().x, event.getChunk().z));
-				nbtdata.setTag(String.valueOf(network.getNetworkID()), networkNBT);
+				nbtdata.setTag(network.getNetworkType().getID() + "-" + network.getNetworkID(), networkNBT);
 			}
 
-			File file = new File(dataDir, "c." + event.getChunk().x + "." + event.getChunk().z + ".dat");
+			File file = new File(dataDir, "c." + dimID + "." + event.getChunk().x + "." + event.getChunk().z + ".dat");
 			if(!file.exists())
 			{
 				try
@@ -119,9 +125,9 @@ public class WorldListener
 					e.printStackTrace();
 				}
 			}
-			
+
 			System.out.println(nbtdata);
-			
+
 			try
 			{
 				FileOutputStream os = new FileOutputStream(file);

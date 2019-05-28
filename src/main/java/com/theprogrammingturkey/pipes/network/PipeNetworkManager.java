@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.logging.log4j.Level;
-
-import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.util.Util;
 
 import net.minecraft.block.state.IBlockState;
@@ -48,10 +45,10 @@ public class PipeNetworkManager
 		return NETWORK_MANAGERS.get(type);
 	}
 
-	public static void tickManagers()
+	public static void tickManagers(World world)
 	{
 		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
-			networkManager.tick();
+			networkManager.tick(world);
 	}
 
 	public static void purgeForwardingTables()
@@ -60,18 +57,18 @@ public class PipeNetworkManager
 			networkManager.purgeForwardingTable();
 	}
 
-	public static List<IPipeNetwork> getAllNetworksToSave(int x, int z)
+	public static List<IPipeNetwork> getAllNetworksToSave(int dimID, int x, int z)
 	{
 		List<IPipeNetwork> toReturn = new ArrayList<>();
 		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
-			toReturn.addAll(networkManager.getNetworksToSave(x, z));
+			toReturn.addAll(networkManager.getNetworksToSave(dimID, x, z));
 		return toReturn;
 	}
 
 	public int nextID = 0;
 	public Map<Integer, IPipeNetwork> networks = new HashMap<Integer, IPipeNetwork>();
-	public Map<Long, Integer> posToNetworkID = new HashMap<Long, Integer>();
-	public Map<Integer, Integer> idForwardingTable = new HashMap<Integer, Integer>();
+	public Map<Integer, Map<Long, Integer>> dimAndPosToNetworkID = new HashMap<>();
+	public Map<Integer, Integer> idForwardingTable = new HashMap<>();
 
 	private NetworkType type;
 
@@ -80,15 +77,24 @@ public class PipeNetworkManager
 		this.type = type;
 	}
 
-	public void tick()
+	public void tick(World world)
 	{
+//		System.out.println(type.name() + " " + this.networks.size());
+		int dimID = world.provider.getDimension();
 		List<Integer> deadNetworks = new ArrayList<>();
-		for(Entry<Integer, IPipeNetwork> network : networks.entrySet())
+		for(Entry<Integer, IPipeNetwork> networkEntry : networks.entrySet())
 		{
-			if(network.getValue().isActive())
-				network.getValue().tick();
-			else
-				deadNetworks.add(network.getKey());
+			IPipeNetwork network = networkEntry.getValue();
+			if(network.getDimID() == dimID)
+			{
+				if(network.requiresUpdate())
+					network.update(world);
+
+				if(network.isActive())
+					network.tick();
+				else
+					deadNetworks.add(networkEntry.getKey());
+			}
 		}
 
 		for(Integer i : deadNetworks)
@@ -97,17 +103,18 @@ public class PipeNetworkManager
 		deadNetworks.clear();
 	}
 
-	public List<IPipeNetwork> getNetworksToSave(int x, int z)
+	public List<IPipeNetwork> getNetworksToSave(int dimID, int x, int z)
 	{
 		List<IPipeNetwork> toReturn = new ArrayList<>();
 		for(IPipeNetwork network : networks.values())
-			if(network.isInChunk(x, z))
+			if(network.getDimID() == dimID && network.isInChunk(x, z))
 				toReturn.add(network);
 		return toReturn;
 	}
 
 	public IPipeNetwork addPipeToNetwork(World world, BlockPos pos)
 	{
+		int dimId = world.provider.getDimension();
 		List<IPipeNetwork> adjacentNetworks = new ArrayList<>();
 		for(EnumFacing side : EnumFacing.VALUES)
 		{
@@ -115,7 +122,7 @@ public class PipeNetworkManager
 			IBlockState neighbor = world.getBlockState(offset);
 			if(Util.areBlockAndTypeEqual(type, neighbor.getBlock()))
 			{
-				IPipeNetwork network = getNetwork(offset);
+				IPipeNetwork network = getNetwork(offset, dimId);
 				if(network != null)
 					adjacentNetworks.add(network);
 			}
@@ -123,7 +130,7 @@ public class PipeNetworkManager
 
 		if(adjacentNetworks.size() == 0)
 		{
-			IPipeNetwork newNetwork = PipeNetwork.getNewNetwork(type, nextID++);
+			IPipeNetwork newNetwork = PipeNetwork.getNewNetwork(type, nextID++, dimId);
 			networks.put(newNetwork.getNetworkID(), newNetwork);
 			addPosToNetwork(newNetwork, pos);
 			return newNetwork;
@@ -151,12 +158,19 @@ public class PipeNetworkManager
 	public void addPosToNetwork(IPipeNetwork network, BlockPos pos)
 	{
 		network.addBlockPosToNetwork(pos);
-		posToNetworkID.put(pos.toLong(), network.getNetworkID());
+		Map<Long, Integer> posToID = dimAndPosToNetworkID.get(network.getDimID());
+		if(posToID == null)
+		{
+			posToID = new HashMap<>();
+			dimAndPosToNetworkID.put(network.getDimID(), posToID);
+		}
+		posToID.put(pos.toLong(), network.getNetworkID());
 	}
 
 	public void removePipeFromNetwork(World world, BlockPos pos)
 	{
-		IPipeNetwork network = this.getNetwork(pos);
+		int dimId = world.provider.getDimension();
+		IPipeNetwork network = this.getNetwork(pos, dimId);
 		if(network == null)
 			return;
 		List<BlockPos> adjecentPipes = new ArrayList<BlockPos>();
@@ -175,20 +189,20 @@ public class PipeNetworkManager
 		}
 		else if(adjecentPipes.size() == 1)
 		{
-			IPipeNetwork adjNetwork = this.getNetwork(adjecentPipes.get(0));
+			IPipeNetwork adjNetwork = this.getNetwork(adjecentPipes.get(0), dimId);
 			if(adjNetwork != null)
 				this.removePosFromNetwork(adjNetwork, pos);
 		}
 		else
 		{
 			boolean firstTry = true;
-			IPipeNetwork origNetwork = this.getNetwork(adjecentPipes.get(0));
+			IPipeNetwork origNetwork = this.getNetwork(adjecentPipes.get(0), dimId);
 			IPipeNetwork newNetwork = null;
 			while(adjecentPipes.size() > 0)
 			{
 				if(!firstTry)
 				{
-					newNetwork = PipeNetwork.getNewNetwork(type, nextID++);
+					newNetwork = PipeNetwork.getNewNetwork(type, nextID++, dimId);
 					networks.put(newNetwork.getNetworkID(), newNetwork);
 				}
 				BlockPos startPos = adjecentPipes.remove(0);
@@ -250,7 +264,13 @@ public class PipeNetworkManager
 	public void removePosFromNetwork(IPipeNetwork network, BlockPos pos)
 	{
 		network.removeBlockPosFromNetwork(pos);
-		posToNetworkID.remove(pos.toLong());
+		Map<Long, Integer> posToID = dimAndPosToNetworkID.get(network.getDimID());
+		if(posToID == null)
+		{
+			posToID = new HashMap<>();
+			dimAndPosToNetworkID.put(network.getDimID(), posToID);
+		}
+		posToID.remove(pos.toLong());
 	}
 
 	public void mergeNetworks(IPipeNetwork firstNetwork, IPipeNetwork otherNetwork)
@@ -260,12 +280,12 @@ public class PipeNetworkManager
 		deleteNetwork(otherNetwork);
 	}
 
-	public IPipeNetwork getOrInitNewNetwork(Integer id, NetworkType type)
+	public IPipeNetwork getOrInitNewNetwork(Integer id, NetworkType type, int dimID)
 	{
 		if(this.networks.containsKey(id))
 			return this.networks.get(id);
 
-		IPipeNetwork network = PipeNetwork.getNewNetwork(type, nextID++);
+		IPipeNetwork network = PipeNetwork.getNewNetwork(type, nextID++, dimID);
 		networks.put(network.getNetworkID(), network);
 		return network;
 	}
@@ -276,9 +296,13 @@ public class PipeNetworkManager
 		network.deleteNetwork();
 	}
 
-	public Integer getNetworkID(BlockPos pos)
+	public Integer getNetworkID(BlockPos pos, int dimId)
 	{
-		Integer id = posToNetworkID.get(pos.toLong());
+		Map<Long, Integer> posToID = dimAndPosToNetworkID.get(dimId);
+		if(posToID == null)
+			return null;
+
+		Integer id = posToID.get(pos.toLong());
 		if(id == null)
 			return null;
 
@@ -295,9 +319,9 @@ public class PipeNetworkManager
 		return id;
 	}
 
-	public IPipeNetwork getNetwork(BlockPos pos)
+	public IPipeNetwork getNetwork(BlockPos pos, int dimId)
 	{
-		Integer id = getNetworkID(pos);
+		Integer id = getNetworkID(pos, dimId);
 		if(id == null)
 			return null;
 
@@ -311,9 +335,9 @@ public class PipeNetworkManager
 
 	public void purgeForwardingTable()
 	{
-		PipesCore.logger.log(Level.INFO, "Purging Forwaring Table");
-		for(Entry<Long, Integer> blockpos : posToNetworkID.entrySet())
-			blockpos.setValue(getNetworkID(BlockPos.fromLong(blockpos.getKey())));
+		for(Entry<Integer, Map<Long, Integer>> dim : dimAndPosToNetworkID.entrySet())
+			for(Entry<Long, Integer> blockpos : dim.getValue().entrySet())
+				blockpos.setValue(getNetworkID(BlockPos.fromLong(blockpos.getKey()), dim.getKey()));
 		idForwardingTable.clear();
 	}
 

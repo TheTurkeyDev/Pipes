@@ -16,9 +16,9 @@ import net.minecraftforge.items.IItemHandler;
 
 public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 {
-	public ItemPipeNetwork(int networkID)
+	public ItemPipeNetwork(int networkID, int dimId)
 	{
-		super(networkID, NetworkType.ITEM, CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
+		super(networkID, dimId, NetworkType.ITEM, CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
 	}
 
 	public void processTransfers()

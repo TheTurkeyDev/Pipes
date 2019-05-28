@@ -17,8 +17,14 @@ public interface IPipeNetwork
 	public boolean isActive();
 
 	public int getNetworkID();
+	
+	public int getDimID();
 
 	public NetworkType getNetworkType();
+	
+	public void update(World world);
+	
+	public boolean requiresUpdate();
 
 	public void deleteNetwork();
 
