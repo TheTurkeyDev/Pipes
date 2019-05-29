@@ -185,17 +185,17 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		BlockPos offsetPos = pos.offset(facing.getOpposite());
 		TileEntity te = world.getTileEntity(offsetPos);
 		//Because of Furnaces we need to cache this stuff and only add it all once per tick
+		for(int i = toUpdate.size() - 1; i >= 0; i--)
+		{
+			HandlerHolder<T> holder = toUpdate.get(i);
+			if(holder.handlerPos.equals(offsetPos))
+				toUpdate.remove(i);
+		}
+		
 		if(te != null)
 		{
 			if(!te.hasCapability(holderCap, facing))
 				return;
-
-			for(int i = toUpdate.size() - 1; i >= 0; i--)
-			{
-				HandlerHolder<T> holder = toUpdate.get(i);
-				if(holder.handlerPos.equals(offsetPos))
-					toUpdate.remove(i);
-			}
 			this.toUpdate.add(new HandlerHolder<T>(te.getCapability(holderCap, facing), world, pos, facing, filter, true, te.hashCode()));
 		}
 		else

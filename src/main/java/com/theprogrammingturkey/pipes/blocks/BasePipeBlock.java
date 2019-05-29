@@ -101,10 +101,10 @@ public class BasePipeBlock extends Block
 		{
 			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForBlockState(state);
 			if(networkManager == null)
-				return true;
+				return false;
 			IPipeNetwork network = networkManager.getNetwork(pos, world.provider.getDimension());
 			if(network == null)
-				return true;
+				return false;
 
 			int faceHit = -1;
 			if(hitX > .999 || hitX < 0.001)
@@ -114,18 +114,25 @@ public class BasePipeBlock extends Block
 			else if(hitZ > .999 || hitZ < 0.001)
 				faceHit = 2;
 
+			InterfaceFilter filter = null;
 			if(hitX < 0.4375 && faceHit != 0)
-				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.EAST));
+				filter = network.getFilterFromPipe(pos, EnumFacing.EAST);
 			else if(hitX > 0.5625 && faceHit != 0)
-				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.WEST));
+				filter = network.getFilterFromPipe(pos, EnumFacing.WEST);
 			else if(hitY < 0.4375 && faceHit != 1)
-				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.UP));
+				filter = network.getFilterFromPipe(pos, EnumFacing.UP);
 			else if(hitY > 0.5625 && faceHit != 1)
-				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.DOWN));
+				filter = network.getFilterFromPipe(pos, EnumFacing.DOWN);
 			else if(hitZ < 0.4375 && faceHit != 2)
-				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.SOUTH));
+				filter = network.getFilterFromPipe(pos, EnumFacing.SOUTH);
 			else if(hitZ > 0.5625 && faceHit != 2)
-				UIUtil.openFilterUI((EntityPlayerMP) player, pos, network.getFilterFromPipe(pos, EnumFacing.NORTH));
+				filter = network.getFilterFromPipe(pos, EnumFacing.NORTH);
+
+			if(filter != null)
+			{
+				UIUtil.openFilterUI((EntityPlayerMP) player, pos, filter);
+				return true;
+			}
 
 			return false;
 		}

@@ -1,11 +1,8 @@
 {
     "multipart": [
         {
-            "when": {
-                "north": "none"
-            },
             "apply": {
-                "model": "pipes:fluid_pipe_none"
+                "model": "pipes:fluid_pump_center"
             }
         },
         {
@@ -18,49 +15,11 @@
         },
         {
             "when": {
-                "north": "inventory"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_inventory"
-            }
-        },
-        {
-            "when": {
-                "south": "none"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_none",
-                "y": 180,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
                 "south": "pipe"
             },
             "apply": {
                 "model": "pipes:fluid_pipe_connect",
                 "y": 180,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
-                "south": "inventory"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_inventory",
-                "y": 180,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
-                "west": "none"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_none",
-                "y": 270,
                 "uvlock": true
             }
         },
@@ -76,51 +35,11 @@
         },
         {
             "when": {
-                "west": "inventory"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_inventory",
-                "y": 270,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
-                "east": "none"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_none",
-                "y": 90,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
                 "east": "pipe"
             },
             "apply": {
                 "model": "pipes:fluid_pipe_connect",
                 "y": 90,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
-                "east": "inventory"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_inventory",
-                "y": 90,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
-                "up": "none"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_none",
-                "x": 270,
                 "uvlock": true
             }
         },
@@ -136,26 +55,6 @@
         },
         {
             "when": {
-                "up": "inventory"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_inventory",
-                "x": 270,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
-                "down": "none"
-            },
-            "apply": {
-                "model": "pipes:fluid_pipe_none",
-                "x": 90,
-                "uvlock": true
-            }
-        },
-        {
-            "when": {
                 "down": "pipe"
             },
             "apply": {
@@ -166,10 +65,58 @@
         },
         {
             "when": {
-                "down": "inventory"
+                "pump_facing": "north"
             },
             "apply": {
-                "model": "pipes:fluid_pipe_inventory",
+                "model": "pipes:fluid_pump_pump"
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "south"
+            },
+            "apply": {
+                "model": "pipes:fluid_pump_pump",
+                "y": 180,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "west"
+            },
+            "apply": {
+                "model": "pipes:fluid_pump_pump",
+                "y": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "east"
+            },
+            "apply": {
+                "model": "pipes:fluid_pump_pump",
+                "y": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "up"
+            },
+            "apply": {
+                "model": "pipes:fluid_pump_pump",
+                "x": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "down"
+            },
+            "apply": {
+                "model": "pipes:fluid_pump_pump",
                 "x": 90,
                 "uvlock": true
             }

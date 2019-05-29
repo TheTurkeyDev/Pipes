@@ -79,7 +79,7 @@ public class PipeNetworkManager
 
 	public void tick(World world)
 	{
-//		System.out.println(type.name() + " " + this.networks.size());
+		//		System.out.println(type.name() + " " + this.networks.size());
 		int dimID = world.provider.getDimension();
 		List<Integer> deadNetworks = new ArrayList<>();
 		for(Entry<Integer, IPipeNetwork> networkEntry : networks.entrySet())
@@ -317,6 +317,11 @@ public class PipeNetworkManager
 		}
 
 		return id;
+	}
+
+	public IPipeNetwork getNetwork(BlockPos pos, World world)
+	{
+		return getNetwork(pos, world.provider.getDimension());
 	}
 
 	public IPipeNetwork getNetwork(BlockPos pos, int dimId)

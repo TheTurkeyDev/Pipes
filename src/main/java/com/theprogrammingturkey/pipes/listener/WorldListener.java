@@ -63,8 +63,6 @@ public class WorldListener
 					return;
 				}
 
-				System.out.println(nbtdata);
-
 				if(nbtdata != null)
 				{
 					for(String key : nbtdata.getKeySet())
@@ -125,8 +123,6 @@ public class WorldListener
 					e.printStackTrace();
 				}
 			}
-
-			System.out.println(nbtdata);
 
 			try
 			{
