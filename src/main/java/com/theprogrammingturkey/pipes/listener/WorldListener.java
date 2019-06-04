@@ -13,6 +13,7 @@ import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.world.ChunkDataEvent;
@@ -20,7 +21,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class WorldListener
 {
-	public static List<String> loadingChunk = new ArrayList<String>();
+	private static List<Vec3i> watchedChunks = new ArrayList<>();
+	public static List<Vec3i> loadingChunk = new ArrayList<>();
 
 	private File dataDir;
 
@@ -40,14 +42,16 @@ public class WorldListener
 			int x = event.getChunk().x;
 			int z = event.getChunk().z;
 
-			String chunk = x + "." + z;
+			Vec3i chunkVec = new Vec3i(x, 0, z);
 
-			if(loadingChunk.contains(chunk))
+			if(loadingChunk.contains(chunkVec))
 				return;
 
-			loadingChunk.add(chunk);
+			watchedChunks.add(chunkVec);
 
-			File file = new File(dataDir, "c." + dimID + "." + chunk + ".dat");
+			loadingChunk.add(chunkVec);
+
+			File file = new File(dataDir, "c." + dimID + "." + chunkVec.getX() + "." + chunkVec.getZ() + ".dat");
 			if(file.exists())
 			{
 				NBTTagCompound nbtdata;
@@ -59,9 +63,11 @@ public class WorldListener
 				} catch(IOException e)
 				{
 					e.printStackTrace();
-					loadingChunk.remove(chunk);
+					loadingChunk.remove(chunkVec);
 					return;
 				}
+
+				System.out.println(nbtdata);
 
 				if(nbtdata != null)
 				{
@@ -79,7 +85,7 @@ public class WorldListener
 				}
 			}
 
-			loadingChunk.remove(chunk);
+			loadingChunk.remove(chunkVec);
 		}
 	}
 
@@ -96,10 +102,26 @@ public class WorldListener
 			}
 
 			int dimID = world.provider.getDimension();
+			File file = new File(dataDir, "c." + dimID + "." + event.getChunk().x + "." + event.getChunk().z + ".dat");
 
 			List<IPipeNetwork> networksToSave = PipeNetworkManager.getAllNetworksToSave(dimID, event.getChunk().x, event.getChunk().z);
-			if(networksToSave.isEmpty())
+			if(networksToSave.isEmpty() && watchedChunks.contains(new Vec3i(event.getChunk().x, 0, event.getChunk().z)))
+			{
+				if(file.exists())
+				{
+					try
+					{
+						FileOutputStream os = new FileOutputStream(file);
+						CompressedStreamTools.writeCompressed(new NBTTagCompound(), os);
+						os.close();
+					} catch(IOException e)
+					{
+						e.printStackTrace();
+						return;
+					}
+				}
 				return;
+			}
 
 			NBTTagCompound nbtdata = new NBTTagCompound();
 
@@ -112,7 +134,8 @@ public class WorldListener
 				nbtdata.setTag(network.getNetworkType().getID() + "-" + network.getNetworkID(), networkNBT);
 			}
 
-			File file = new File(dataDir, "c." + dimID + "." + event.getChunk().x + "." + event.getChunk().z + ".dat");
+			System.out.println(nbtdata);
+
 			if(!file.exists())
 			{
 				try

@@ -1,7 +1,7 @@
 {
     "parent": "block/block",
     "textures": {
-        "texture": "pipes:blocks/pipe"
+        "texture": "pipes:blocks/item_pipe"
     },
     "elements": [
         {

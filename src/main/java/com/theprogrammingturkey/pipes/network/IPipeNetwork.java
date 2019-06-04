@@ -17,14 +17,18 @@ public interface IPipeNetwork
 	public boolean isActive();
 
 	public int getNetworkID();
-	
+
 	public int getDimID();
 
 	public NetworkType getNetworkType();
-	
+
 	public void update(World world);
-	
+
 	public boolean requiresUpdate();
+
+	public void passiveUpdate(World world);
+
+	public boolean requiresPassiveUpdate();
 
 	public void deleteNetwork();
 
@@ -33,13 +37,14 @@ public interface IPipeNetwork
 	public void removeBlockPosFromNetwork(BlockPos pos);
 
 	public List<Long> getcontainedBlockPos();
+	
+	public boolean isPosInNetwork(BlockPos pos);
 
 	public void mergeWithNetwork(IPipeNetwork toMerge);
 
 	/**
 	 * 
 	 * @param world
-	 * @param pos
 	 *            Location of the pipe in the world
 	 * @param facing
 	 *            interfacing side on the interfaced block
@@ -60,6 +65,6 @@ public interface IPipeNetwork
 	public boolean shouldSave();
 
 	public NBTTagCompound saveNetworkInchunk(int x, int z);
-	
+
 	public void loadNetworkInChunk(World world, int x, int z, NBTTagCompound nbt);
 }

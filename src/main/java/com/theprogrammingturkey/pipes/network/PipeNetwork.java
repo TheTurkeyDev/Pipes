@@ -42,6 +42,10 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 
 	private boolean networkChanged = true;
 	private boolean requiresUpdate = false;
+	private boolean requiresPassiveUpdate = false;
+
+	private int passiveBlockCheck = 600;
+	private int passiveBlockCheckTick = passiveBlockCheck;
 
 	protected Comparator<InterfaceInfo<T>> insertPrioritySort = new Comparator<InterfaceInfo<T>>()
 	{
@@ -105,39 +109,79 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		}
 		this.toUpdate.clear();
 
+		passiveBlockCheckTick--;
+		if(passiveBlockCheckTick == 0)
+		{
+			this.requiresPassiveUpdate = true;
+			passiveBlockCheckTick = passiveBlockCheck;
+		}
+
 		processTransfers();
 	}
 
 	public void update(World world)
 	{
 		this.requiresUpdate = false;
+		PipeNetworkManager manager = PipeNetworkManager.getNetworkManagerForType(type);
+		List<BlockPos> toRemove = new ArrayList<>();
 		for(Long posLong : this.containedBlockPos)
 		{
 			BlockPos pos = BlockPos.fromLong(posLong);
 
-			for(EnumFacing facing : EnumFacing.VALUES)
+			if(manager.areBlockAndTypeEqual(world.getBlockState(pos)))
 			{
-				InterfaceFilter filter = new InterfaceFilter(facing.getOpposite(), this.type);
-				long hash = this.getKeyHash(pos, facing.getOpposite());
+				for(EnumFacing facing : EnumFacing.VALUES)
+				{
+					InterfaceFilter filter = new InterfaceFilter(facing.getOpposite(), this.type);
+					long hash = this.getKeyHash(pos, facing.getOpposite());
 
-				//Check both the loaded and queued interfaces for the capholder to update
-				if(interfaces.containsKey(hash))
-					filter = interfaces.get(hash).filter;
-				else
-					for(HandlerHolder<T> holder : this.toUpdate)
-						if(holder.handlerPos.equals(pos.offset(facing)) && holder.facing == facing.getOpposite())
-							filter = holder.filter;
+					//Check both the loaded and queued interfaces for the capholder to update
+					if(interfaces.containsKey(hash))
+						filter = interfaces.get(hash).filter;
+					else
+						for(HandlerHolder<T> holder : this.toUpdate)
+							if(holder.handlerPos.equals(pos.offset(facing)) && holder.facing == facing.getOpposite())
+								filter = holder.filter;
 
-				addInterfacedBlock(world, pos, facing.getOpposite(), filter);
+					addInterfacedBlock(world, pos, facing.getOpposite(), filter);
+				}
+			}
+			else
+			{
+				toRemove.add(pos);
 			}
 		}
 
+		for(BlockPos pos : toRemove)
+			manager.removePipeFromNetwork(world, pos);
+
 		interfaces.clear();
+	}
+
+	public void passiveUpdate(World world)
+	{
+		this.requiresPassiveUpdate = false;
+		PipeNetworkManager manager = PipeNetworkManager.getNetworkManagerForType(type);
+		List<BlockPos> toRemove = new ArrayList<>();
+		for(Long posLong : this.containedBlockPos)
+		{
+			BlockPos pos = BlockPos.fromLong(posLong);
+			if(!manager.areBlockAndTypeEqual(world.getBlockState(pos)))
+				toRemove.add(pos);
+		}
+
+		for(BlockPos pos : toRemove)
+			manager.removePipeFromNetwork(world, pos);
 	}
 
 	public boolean requiresUpdate()
 	{
 		return this.requiresUpdate;
+	}
+
+	public boolean requiresPassiveUpdate()
+	{
+		return this.requiresPassiveUpdate;
 	}
 
 	public abstract void processTransfers();
@@ -191,7 +235,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 			if(holder.handlerPos.equals(offsetPos))
 				toUpdate.remove(i);
 		}
-		
+
 		if(te != null)
 		{
 			if(!te.hasCapability(holderCap, facing))
@@ -327,7 +371,6 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 	public void loadNetworkInChunk(World world, int x, int z, NBTTagCompound nbt)
 	{
 		List<Long> blocksContained = new ArrayList<>();
-		PipeNetworkManager manager = PipeNetworkManager.getNetworkManagerForType(this.type);
 
 		for(String keyLong : nbt.getKeySet())
 		{
@@ -336,7 +379,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 			NBTTagCompound pipe = nbt.getCompoundTag(keyLong);
 
 			BlockPos pos = new BlockPos(pipe.getInteger("x"), pipe.getInteger("y"), pipe.getInteger("z"));
-			manager.addPosToNetwork(this, pos);
+			this.addBlockPosToNetwork(pos);
 
 			NBTTagList interfaces = pipe.getTagList("interfaces", 10);
 			for(NBTBase interfaceBase : interfaces)

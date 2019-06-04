@@ -15,6 +15,7 @@ import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.relauncher.Side;
 
 @Mod(modid = PipesCore.MODID, name = PipesCore.NAME, version = PipesCore.VERSION)
 public class PipesCore
@@ -47,9 +48,10 @@ public class PipesCore
 	@EventHandler
 	public void init(FMLInitializationEvent event)
 	{
-
+		if(event.getSide().equals(Side.CLIENT))
+			RegistryHelper.registerItemsModels();
 	}
-	
+
 	@EventHandler
 	public void serverLoad(FMLServerStartingEvent event)
 	{

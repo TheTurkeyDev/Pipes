@@ -1,7 +1,7 @@
 package com.theprogrammingturkey.pipes.blocks;
 
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
-import com.theprogrammingturkey.pipes.util.Util;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
@@ -24,7 +24,7 @@ public class FluidPipeBlock extends BasePipeBlock
 		{
 			BlockPos offset = origin.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(Util.areBlockAndTypeEqual(NetworkType.FLUID, neighbor.getBlock()))
+			if(PipeNetworkManager.getNetworkManagerForType(NetworkType.FLUID).areBlockAndTypeEqual(neighbor))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
 			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side.getOpposite()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);

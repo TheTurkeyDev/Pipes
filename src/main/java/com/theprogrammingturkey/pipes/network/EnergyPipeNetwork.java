@@ -86,7 +86,7 @@ public class EnergyPipeNetwork extends PipeNetwork<IEnergyStorage>
 
 		return false;
 	}
-
+	
 	private static class StackInfo
 	{
 		public IEnergyStorage inv;
