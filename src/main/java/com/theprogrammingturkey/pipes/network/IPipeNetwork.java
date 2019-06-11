@@ -37,7 +37,7 @@ public interface IPipeNetwork
 	public void removeBlockPosFromNetwork(BlockPos pos);
 
 	public List<Long> getcontainedBlockPos();
-	
+
 	public boolean isPosInNetwork(BlockPos pos);
 
 	public void mergeWithNetwork(IPipeNetwork toMerge);

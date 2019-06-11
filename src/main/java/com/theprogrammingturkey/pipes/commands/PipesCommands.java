@@ -3,7 +3,6 @@ package com.theprogrammingturkey.pipes.commands;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -34,12 +33,11 @@ public class PipesCommands extends CommandBase
 		if(args[0].equalsIgnoreCase("test"))
 		{
 			BlockPos below = sender.getPosition().add(0, -1, 0);
-			IBlockState state = sender.getEntityWorld().getBlockState(below);
-			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForBlockState(state).getNetwork(below, sender.getEntityWorld());
+			IPipeNetwork network = PipeNetworkManager.getNetworksAtPos(below, sender.getEntityWorld().provider.getDimension()).get(0);
 			if(network != null)
 				sender.sendMessage(new TextComponentString(String.valueOf(network.getNetworkID())));
 			else
-				sender.sendMessage(new TextComponentString("NULL"));
+				sender.sendMessage(new TextComponentString("None"));
 		}
 	}
 

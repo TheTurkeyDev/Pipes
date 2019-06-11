@@ -90,9 +90,7 @@ public class UpdateFilterPacket implements IMessage
 		public IMessage onMessage(UpdateFilterPacket message, MessageContext ctx)
 		{
 			World world = ctx.getServerHandler().player.world;
-			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerAtPos(world, message.pos);
-			if(networkManager == null)
-				return null;
+			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForType(message.filter.getNetworkType());
 			IPipeNetwork network = networkManager.getNetwork(message.pos, world.provider.getDimension());
 			if(network == null)
 				return null;

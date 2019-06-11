@@ -100,10 +100,7 @@ public class BasePipeBlock extends Block
 	{
 		if(!world.isRemote)
 		{
-			PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForBlockState(state);
-			if(networkManager == null)
-				return false;
-			IPipeNetwork network = networkManager.getNetwork(pos, world.provider.getDimension());
+			IPipeNetwork network = PipeNetworkManager.getNetworkManagerForType(type).getNetwork(pos, world.provider.getDimension());
 			if(network == null)
 				return false;
 

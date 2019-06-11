@@ -24,17 +24,12 @@ public class PipeNetworkManager
 		NETWORK_MANAGERS.put(NetworkType.ENERGY, new PipeNetworkManager(NetworkType.ENERGY));
 	}
 
-	public static PipeNetworkManager getNetworkManagerAtPos(World world, BlockPos pos)
+	public static List<IPipeNetwork> getNetworksAtPos(BlockPos pos, int dimID)
 	{
-		return getNetworkManagerForBlockState(world.getBlockState(pos));
-	}
-
-	public static PipeNetworkManager getNetworkManagerForBlockState(IBlockState state)
-	{
-		for(PipeNetworkManager manager : NETWORK_MANAGERS.values())
-			if(manager.areBlockAndTypeEqual(state))
-				return manager;
-		return null;
+		List<IPipeNetwork> networks = new ArrayList<>();
+		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
+			networks.add(networkManager.getNetwork(pos, dimID));
+		return networks;
 	}
 
 	public static PipeNetworkManager getNetworkManagerForType(NetworkType type)
@@ -117,7 +112,7 @@ public class PipeNetworkManager
 		{
 			BlockPos offset = pos.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(areBlockAndTypeEqual(neighbor))
+			if(type.areBlockAndTypeEqual(neighbor))
 			{
 				IPipeNetwork network = getNetwork(offset, dimId);
 				if(network != null)
@@ -163,7 +158,7 @@ public class PipeNetworkManager
 		{
 			BlockPos offset = pos.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(areBlockAndTypeEqual(neighbor) && network.isPosInNetwork(offset))
+			if(type.areBlockAndTypeEqual(neighbor) && network.isPosInNetwork(offset))
 				adjecentPipes.add(offset);
 		}
 
@@ -214,7 +209,7 @@ public class PipeNetworkManager
 						}
 					}
 					IBlockState neighbor = world.getBlockState(offset);
-					if(areBlockAndTypeEqual(neighbor))
+					if(type.areBlockAndTypeEqual(neighbor))
 					{
 						float distPts = 0f;
 						for(BlockPos goalPos : adjecentPipes)
@@ -252,7 +247,7 @@ public class PipeNetworkManager
 							if(adjecentPipes.contains(offset))
 								adjecentPipes.remove(offset);
 							else if(!visited.contains(offset))
-								if(areBlockAndTypeEqual(world.getBlockState(offset)))
+								if(type.areBlockAndTypeEqual(world.getBlockState(offset)))
 									toVisit.add(offset);
 						}
 					}
@@ -327,17 +322,6 @@ public class PipeNetworkManager
 		return this.type;
 	}
 
-	public boolean areBlockAndTypeEqual(IBlockState state)
-	{
-		if(type == NetworkType.ITEM)
-			return state.getBlock().equals(RegistryHelper.ITEM_PIPE);
-		else if(type == NetworkType.FLUID)
-			return state.getBlock().equals(RegistryHelper.FLUID_PIPE) || state.getBlock().equals(RegistryHelper.FLUID_PUMP);
-		else if(type == NetworkType.ENERGY)
-			return state.getBlock().equals(RegistryHelper.ENERGY_PIPE);
-		return false;
-	}
-
 	public enum NetworkType
 	{
 		ITEM(0), FLUID(1), ENERGY(2);
@@ -360,6 +344,17 @@ public class PipeNetworkManager
 				if(type.getID() == id)
 					return type;
 			return ITEM;
+		}
+
+		public boolean areBlockAndTypeEqual(IBlockState state)
+		{
+			if(this == NetworkType.ITEM)
+				return state.getBlock().equals(RegistryHelper.ITEM_PIPE);
+			else if(this == NetworkType.FLUID)
+				return state.getBlock().equals(RegistryHelper.FLUID_PIPE) || state.getBlock().equals(RegistryHelper.FLUID_PUMP);
+			else if(this == NetworkType.ENERGY)
+				return state.getBlock().equals(RegistryHelper.ENERGY_PIPE);
+			return false;
 		}
 	}
 }

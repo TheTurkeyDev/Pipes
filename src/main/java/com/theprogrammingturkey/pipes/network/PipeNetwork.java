@@ -128,7 +128,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		{
 			BlockPos pos = BlockPos.fromLong(posLong);
 
-			if(manager.areBlockAndTypeEqual(world.getBlockState(pos)))
+			if(type.areBlockAndTypeEqual(world.getBlockState(pos)))
 			{
 				for(EnumFacing facing : EnumFacing.VALUES)
 				{
@@ -166,7 +166,7 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 		for(Long posLong : this.containedBlockPos)
 		{
 			BlockPos pos = BlockPos.fromLong(posLong);
-			if(!manager.areBlockAndTypeEqual(world.getBlockState(pos)))
+			if(!type.areBlockAndTypeEqual(world.getBlockState(pos)))
 				toRemove.add(pos);
 		}
 
