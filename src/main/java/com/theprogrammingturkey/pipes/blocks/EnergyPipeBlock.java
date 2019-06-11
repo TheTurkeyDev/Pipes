@@ -1,6 +1,7 @@
 package com.theprogrammingturkey.pipes.blocks;
 
 import com.theprogrammingturkey.pipes.RegistryHelper;
+import com.theprogrammingturkey.pipes.blocks.properties.EnumAttachType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import net.minecraft.block.state.IBlockState;
@@ -9,7 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.energy.CapabilityEnergy;
 
-public class EnergyPipeBlock extends BasePipeBlock
+public class EnergyPipeBlock extends BasePrimitivePipeBlock
 {
 	public EnergyPipeBlock()
 	{

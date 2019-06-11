@@ -3,6 +3,7 @@ package com.theprogrammingturkey.pipes.blocks;
 import javax.annotation.Nullable;
 
 import com.theprogrammingturkey.pipes.RegistryHelper;
+import com.theprogrammingturkey.pipes.blocks.properties.EnumAttachType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import net.minecraft.block.state.IBlockState;
@@ -14,7 +15,7 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.items.CapabilityItemHandler;
 
-public class ItemPipeBlock extends BasePipeBlock
+public class ItemPipeBlock extends BasePrimitivePipeBlock
 {
 	public ItemPipeBlock()
 	{

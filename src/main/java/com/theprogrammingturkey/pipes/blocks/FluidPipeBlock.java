@@ -1,5 +1,6 @@
 package com.theprogrammingturkey.pipes.blocks;
 
+import com.theprogrammingturkey.pipes.blocks.properties.EnumAttachType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
@@ -9,7 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
-public class FluidPipeBlock extends BasePipeBlock
+public class FluidPipeBlock extends BasePrimitivePipeBlock
 {
 	public FluidPipeBlock()
 	{

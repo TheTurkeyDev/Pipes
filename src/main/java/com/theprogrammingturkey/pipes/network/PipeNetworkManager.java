@@ -24,17 +24,12 @@ public class PipeNetworkManager
 		NETWORK_MANAGERS.put(NetworkType.ENERGY, new PipeNetworkManager(NetworkType.ENERGY));
 	}
 
-	public static PipeNetworkManager getNetworkManagerAtPos(World world, BlockPos pos)
+	public static List<IPipeNetwork> getNetworksAtPos(BlockPos pos, int dimID)
 	{
-		return getNetworkManagerForBlockState(world.getBlockState(pos));
-	}
-
-	public static PipeNetworkManager getNetworkManagerForBlockState(IBlockState state)
-	{
-		for(PipeNetworkManager manager : NETWORK_MANAGERS.values())
-			if(manager.areBlockAndTypeEqual(state))
-				return manager;
-		return null;
+		List<IPipeNetwork> networks = new ArrayList<>();
+		for(PipeNetworkManager networkManager : NETWORK_MANAGERS.values())
+			networks.add(networkManager.getNetwork(pos, dimID));
+		return networks;
 	}
 
 	public static PipeNetworkManager getNetworkManagerForType(NetworkType type)
@@ -274,8 +269,8 @@ public class PipeNetworkManager
 		if(this.networks.containsKey(id))
 			return this.networks.get(id);
 
-		if(this.nextID <= id)
-			this.nextID = id + 1;
+		if(nextID <= id)
+			nextID = id + 1;
 
 		IPipeNetwork network = PipeNetwork.getNewNetwork(type, id, dimID);
 		networksToAdd.put(network.getNetworkID(), network);
@@ -317,9 +312,9 @@ public class PipeNetworkManager
 	public int getNextNetworkID()
 	{
 		//TODO: Plan a more elegant way to clean up networkID's
-		while(this.networks.containsKey(this.nextID) || this.networksToAdd.containsKey(this.nextID))
-			this.nextID++;
-		return this.nextID;
+		while(this.networks.containsKey(nextID) || this.networksToAdd.containsKey(nextID))
+			nextID++;
+		return nextID;
 	}
 
 	public NetworkType getType()

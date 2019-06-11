@@ -2,6 +2,7 @@ package com.theprogrammingturkey.pipes.packets;
 
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
+import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.EnumFacing;
@@ -14,6 +15,7 @@ import net.minecraftforge.fml.relauncher.Side;
 
 public class GetFilterPacket implements IMessage
 {
+	private NetworkType type;
 	private BlockPos pos;
 	private EnumFacing side;
 
@@ -21,6 +23,7 @@ public class GetFilterPacket implements IMessage
 	{
 		pos = BlockPos.ORIGIN;
 		side = EnumFacing.DOWN;
+		type = NetworkType.ITEM;
 	}
 
 	/**
@@ -30,15 +33,17 @@ public class GetFilterPacket implements IMessage
 	 * @param facing
 	 *            The interfacing face of the ItemHandler
 	 */
-	public GetFilterPacket(BlockPos pos, EnumFacing side)
+	public GetFilterPacket(BlockPos pos, EnumFacing side, NetworkType type)
 	{
 		this.pos = pos;
 		this.side = side;
+		this.type = type;
 	}
 
 	@Override
 	public void toBytes(ByteBuf buf)
 	{
+		buf.writeInt(type.getID());
 		buf.writeInt(pos.getX());
 		buf.writeInt(pos.getY());
 		buf.writeInt(pos.getZ());
@@ -48,6 +53,7 @@ public class GetFilterPacket implements IMessage
 	@Override
 	public void fromBytes(ByteBuf buf)
 	{
+		this.type = NetworkType.getFromID(buf.readInt());
 		this.pos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
 		this.side = EnumFacing.VALUES[buf.readByte()];
 	}
@@ -60,9 +66,7 @@ public class GetFilterPacket implements IMessage
 			if(ctx.side == Side.SERVER)
 			{
 				World world = ctx.getServerHandler().player.world;
-				PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerAtPos(world, message.pos);
-				if(networkManager == null)
-					return null;
+				PipeNetworkManager networkManager = PipeNetworkManager.getNetworkManagerForType(message.type);
 				IPipeNetwork network = networkManager.getNetwork(message.pos, world.provider.getDimension());
 				if(network == null)
 					return null;

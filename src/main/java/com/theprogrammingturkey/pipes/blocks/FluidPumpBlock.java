@@ -2,7 +2,7 @@ package com.theprogrammingturkey.pipes.blocks;
 
 import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.RegistryHelper;
-import com.theprogrammingturkey.pipes.blocks.BasePipeBlock.EnumAttachType;
+import com.theprogrammingturkey.pipes.blocks.properties.EnumAttachType;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
 import com.theprogrammingturkey.pipes.network.InterfaceFilter;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
@@ -53,7 +53,7 @@ public class FluidPumpBlock extends Block
 			BlockPos offset = origin.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
 			if(neighbor.getBlock().equals(RegistryHelper.FLUID_PIPE))
-				state = state.withProperty(BasePipeBlock.FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
+				state = state.withProperty(BasePrimitivePipeBlock.FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
 		}
 		return state;
 	}
