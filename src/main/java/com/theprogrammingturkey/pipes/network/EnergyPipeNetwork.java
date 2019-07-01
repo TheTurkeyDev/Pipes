@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.theprogrammingturkey.pipes.network.InterfaceFilter.DirectionFilter;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter.DirectionFilter;
+import com.theprogrammingturkey.pipes.util.StackInfo;
 
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
@@ -21,7 +22,7 @@ public class EnergyPipeNetwork extends PipeNetwork<IEnergyStorage>
 	@Override
 	public void processTransfers()
 	{
-		List<StackInfo> avilable = new ArrayList<>();
+		List<StackInfo<IEnergyStorage>> avilable = new ArrayList<>();
 
 		//TODO: Should we sort all interfaces? Even ones not configured as both inputs and outputs
 
@@ -38,7 +39,7 @@ public class EnergyPipeNetwork extends PipeNetwork<IEnergyStorage>
 			int energy = info.inv.extractEnergy(Integer.MAX_VALUE, true);
 
 			if(energy != 0)
-				avilable.add(new StackInfo(info.inv, info.filter, energy));
+				avilable.add(new StackInfo<IEnergyStorage>(info.inv, info.filter, energy));
 		}
 
 		Collections.sort(sortedInterfaces, insertPrioritySort);
@@ -53,7 +54,7 @@ public class EnergyPipeNetwork extends PipeNetwork<IEnergyStorage>
 			int toInsert = 0;
 			for(int j = stackInfoIndex; j < avilable.size(); j++)
 			{
-				StackInfo stackInfo = avilable.get(j);
+				StackInfo<IEnergyStorage> stackInfo = avilable.get(j);
 				if(stackInfo.amountLeft != 0 && !info.inv.equals(stackInfo.inv) && wontSendBack(info.filter, stackInfo.filter, info.inv, stackInfo.inv))
 				{
 					toInsert = stackInfo.amountLeft;
@@ -85,21 +86,5 @@ public class EnergyPipeNetwork extends PipeNetwork<IEnergyStorage>
 			return true;
 
 		return false;
-	}
-
-	private static class StackInfo
-	{
-		public IEnergyStorage inv;
-		public int amount;
-		public int amountLeft;
-		public InterfaceFilter filter;
-
-		public StackInfo(IEnergyStorage inv, InterfaceFilter filter, int amount)
-		{
-			this.inv = inv;
-			this.filter = filter;
-			this.amount = amount;
-			this.amountLeft = amount;
-		}
 	}
 }

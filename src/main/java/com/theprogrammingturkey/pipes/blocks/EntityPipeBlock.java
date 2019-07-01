@@ -1,18 +1,19 @@
 package com.theprogrammingturkey.pipes.blocks;
 
+import com.theprogrammingturkey.pipes.RegistryHelper;
 import com.theprogrammingturkey.pipes.network.NetworkType;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.energy.CapabilityEnergy;
 
-public class FluidPipeBlock extends BasePipeBlock
+public class EntityPipeBlock extends BasePipeBlock
 {
-	public FluidPipeBlock()
+	public EntityPipeBlock()
 	{
-		super("fluid_pipe", NetworkType.FLUID);
+		super("entity_pipe", NetworkType.ENTITY);
 		this.setDefaultState(this.blockState.getBaseState().withProperty(NORTH, EnumAttachType.NONE).withProperty(EAST, EnumAttachType.NONE).withProperty(SOUTH, EnumAttachType.NONE).withProperty(WEST, EnumAttachType.NONE).withProperty(UP, EnumAttachType.NONE).withProperty(DOWN, EnumAttachType.NONE));
 	}
 
@@ -23,9 +24,9 @@ public class FluidPipeBlock extends BasePipeBlock
 		{
 			BlockPos offset = origin.offset(side);
 			IBlockState neighbor = world.getBlockState(offset);
-			if(NetworkType.FLUID.areBlockAndTypeEqual(neighbor))
+			if(neighbor.getBlock().equals(RegistryHelper.ENTITY_PIPE))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.PIPE);
-			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side.getOpposite()))
+			else if(neighbor.getBlock().hasTileEntity(state) && world.getTileEntity(offset).hasCapability(CapabilityEnergy.ENERGY, side.getOpposite()))
 				state = state.withProperty(FACING_MAPPING.get(side).direction, EnumAttachType.INVENTORY);
 		}
 		return state;

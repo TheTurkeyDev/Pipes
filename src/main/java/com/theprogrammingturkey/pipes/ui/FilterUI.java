@@ -6,11 +6,12 @@ import org.lwjgl.input.Keyboard;
 
 import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.containers.FilterContainer;
-import com.theprogrammingturkey.pipes.network.InterfaceFilter;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.NetworkType;
+import com.theprogrammingturkey.pipes.network.filtering.FilterStackItem;
+import com.theprogrammingturkey.pipes.network.filtering.IFilterStack;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 import com.theprogrammingturkey.pipes.packets.PipesPacketHandler;
 import com.theprogrammingturkey.pipes.packets.UpdateFilterPacket;
-import com.theprogrammingturkey.pipes.util.FilterStack;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -109,7 +110,7 @@ public class FilterUI extends GuiContainer
 
 		for(int k = 0; k < this.filter.getStacks().size(); k++)
 		{
-			FilterStack fs = this.filter.getStacks().get(k);
+			IFilterStack fs = this.filter.getStacks().get(k);
 			int i = filterX + k * 18;
 			int j = filterY;
 			ItemStack itemstack = fs.getAsItemStack();
@@ -143,17 +144,17 @@ public class FilterUI extends GuiContainer
 			ItemStack stack = player.inventory.getItemStack();
 
 			for(int i = this.filter.getStacks().size(); i <= slot; i++)
-				this.filter.getStacks().add(new FilterStack(ItemStack.EMPTY));
+				this.filter.getStacks().add(new FilterStackItem(ItemStack.EMPTY));
 
 			if(!stack.isEmpty())
 			{
-				FilterStack fs = new FilterStack(stack);
+				FilterStackItem fs = new FilterStackItem(stack);
 				if(!this.filter.hasStackInFilter(fs))
 					this.filter.getStacks().set(slot, fs);
 			}
 			else if(this.filter.getStacks().get(slot) != null && this.filter.getStacks().get(slot).item != null)
 			{
-				this.filter.getStacks().set(slot, new FilterStack(ItemStack.EMPTY));
+				this.filter.getStacks().set(slot, new FilterStackItem(ItemStack.EMPTY));
 			}
 
 			PipesPacketHandler.INSTANCE.sendToServer(new UpdateFilterPacket(pos, filter));

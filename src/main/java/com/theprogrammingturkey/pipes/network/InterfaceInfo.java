@@ -1,5 +1,7 @@
 package com.theprogrammingturkey.pipes.network;
 
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
+
 import net.minecraft.util.EnumFacing;
 
 public class InterfaceInfo<T>

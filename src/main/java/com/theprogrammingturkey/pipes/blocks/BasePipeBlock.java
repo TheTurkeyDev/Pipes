@@ -8,9 +8,9 @@ import javax.annotation.Nullable;
 
 import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
-import com.theprogrammingturkey.pipes.network.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.NetworkType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 import com.theprogrammingturkey.pipes.util.UIUtil;
 
 import net.minecraft.block.Block;

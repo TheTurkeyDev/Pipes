@@ -4,9 +4,9 @@ import com.theprogrammingturkey.pipes.PipesCore;
 import com.theprogrammingturkey.pipes.RegistryHelper;
 import com.theprogrammingturkey.pipes.blocks.BasePipeBlock.EnumAttachType;
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
-import com.theprogrammingturkey.pipes.network.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.NetworkType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;

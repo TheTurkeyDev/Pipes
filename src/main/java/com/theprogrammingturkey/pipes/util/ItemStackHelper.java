@@ -26,17 +26,6 @@ public class ItemStackHelper
 		return true;
 	}
 
-	public static boolean areFilterStacksEqual(FilterStack stack1, FilterStack stack2)
-	{
-		if(stack1.item != stack2.item)
-			return false;
-
-		if(stack1.meta != stack2.meta)
-			return false;
-
-		return areNBTTagsEqual(stack1.nbt, stack2.nbt);
-	}
-
 	public static boolean areNBTTagsEqual(NBTTagCompound nbt1, NBTTagCompound nbt2)
 	{
 		if((nbt1 == null || nbt1.isEmpty()) && (nbt2 == null || nbt2.isEmpty()))

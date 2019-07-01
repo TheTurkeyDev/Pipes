@@ -1,7 +1,7 @@
 package com.theprogrammingturkey.pipes.blocks;
 
 import com.theprogrammingturkey.pipes.RegistryHelper;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.NetworkType;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;

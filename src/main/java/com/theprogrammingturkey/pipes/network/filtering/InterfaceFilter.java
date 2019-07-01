@@ -1,11 +1,9 @@
-package com.theprogrammingturkey.pipes.network;
+package com.theprogrammingturkey.pipes.network.filtering;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
-import com.theprogrammingturkey.pipes.util.FilterStack;
-import com.theprogrammingturkey.pipes.util.ItemStackHelper;
+import com.theprogrammingturkey.pipes.network.NetworkType;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
@@ -36,14 +34,14 @@ public class InterfaceFilter
 		return this.type;
 	}
 
-	public boolean hasStackInFilter(FilterStack stack)
+	public boolean hasStackInFilter(IFilterStack stack)
 	{
 		if(showingInsert)
 			return insertFilter.hasStackInFilter(stack);
 		return extractFilter.hasStackInFilter(stack);
 	}
 
-	public void addStackToFilter(FilterStack stack)
+	public void addStackToFilter(IFilterStack stack)
 	{
 		if(showingInsert)
 			insertFilter.addStackToFilter(stack);
@@ -51,7 +49,7 @@ public class InterfaceFilter
 			extractFilter.addStackToFilter(stack);
 	}
 
-	public List<FilterStack> getStacks()
+	public List<IFilterStack> getStacks()
 	{
 		return showingInsert ? insertFilter.getStacks() : extractFilter.getStacks();
 	}
@@ -139,28 +137,28 @@ public class InterfaceFilter
 		public boolean isWhiteList = false;
 		public int priority = 0;
 		public boolean enabled = true;
-		private List<FilterStack> filterStacks = new ArrayList<>();
+		private List<IFilterStack> filterStacks = new ArrayList<>();
 
-		public boolean hasStackInFilter(FilterStack stack)
+		public boolean hasStackInFilter(IFilterStack stack)
 		{
-			for(FilterStack s : filterStacks)
-				if(ItemStackHelper.areFilterStacksEqual(stack, s))
+			for(IFilterStack s : filterStacks)
+				if(stack.isEqual(s))
 					return true;
 			return false;
 		}
 
-		public void addStackToFilter(FilterStack stack)
+		public void addStackToFilter(IFilterStack stack)
 		{
 			if(!hasStackInFilter(stack))
 				filterStacks.add(stack);
 		}
 
-		public List<FilterStack> getStacks()
+		public List<IFilterStack> getStacks()
 		{
 			return this.filterStacks;
 		}
 
-		public void setStacks(FilterStack stack)
+		public void setStacks(IFilterStack stack)
 		{
 			if(!hasStackInFilter(stack))
 				filterStacks.add(stack);
@@ -173,8 +171,8 @@ public class InterfaceFilter
 			nbt.setInteger("priority", priority);
 			nbt.setBoolean("enabled", enabled);
 			NBTTagList filterStacksNBT = new NBTTagList();
-			for(FilterStack fs : filterStacks)
-				filterStacksNBT.appendTag(fs.getAsItemStack().serializeNBT());
+			for(IFilterStack fs : filterStacks)
+				filterStacksNBT.appendTag(fs.serializeNBT());
 			nbt.setTag("filterStacks", filterStacksNBT);
 			return nbt;
 		}
@@ -185,9 +183,9 @@ public class InterfaceFilter
 			priority = nbt.getInteger("priority");
 			enabled = nbt.getBoolean("enabled");
 
-			List<FilterStack> filterStacks = new ArrayList<>();
+			List<IFilterStack> filterStacks = new ArrayList<>();
 			for(NBTBase stackNBT : nbt.getTagList("filterStacks", 10))
-				filterStacks.add(new FilterStack(new ItemStack((NBTTagCompound) stackNBT)));
+				filterStacks.add(new FilterStackItem(new ItemStack((NBTTagCompound) stackNBT)));
 			this.filterStacks = filterStacks;
 		}
 	}

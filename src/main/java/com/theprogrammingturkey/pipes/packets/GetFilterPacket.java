@@ -1,8 +1,8 @@
 package com.theprogrammingturkey.pipes.packets;
 
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
+import com.theprogrammingturkey.pipes.network.NetworkType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.EnumFacing;

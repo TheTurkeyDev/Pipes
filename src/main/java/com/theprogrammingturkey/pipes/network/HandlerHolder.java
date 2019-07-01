@@ -1,5 +1,7 @@
 package com.theprogrammingturkey.pipes.network;
 
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
+
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;

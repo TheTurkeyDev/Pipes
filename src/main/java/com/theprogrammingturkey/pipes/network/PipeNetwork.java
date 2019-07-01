@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 import com.theprogrammingturkey.pipes.util.Util;
 
 import net.minecraft.nbt.NBTBase;

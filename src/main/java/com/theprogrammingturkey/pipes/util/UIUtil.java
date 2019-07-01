@@ -1,7 +1,7 @@
 package com.theprogrammingturkey.pipes.util;
 
 import com.theprogrammingturkey.pipes.containers.FilterContainer;
-import com.theprogrammingturkey.pipes.network.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 import com.theprogrammingturkey.pipes.packets.PipesPacketHandler;
 import com.theprogrammingturkey.pipes.packets.RecieveFilterPacket;
 

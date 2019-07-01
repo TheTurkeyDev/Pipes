@@ -1,10 +1,11 @@
 package com.theprogrammingturkey.pipes.packets;
 
 import com.theprogrammingturkey.pipes.network.IPipeNetwork;
-import com.theprogrammingturkey.pipes.network.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.NetworkType;
 import com.theprogrammingturkey.pipes.network.PipeNetworkManager;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
-import com.theprogrammingturkey.pipes.util.FilterStack;
+import com.theprogrammingturkey.pipes.network.filtering.FilterStackItem;
+import com.theprogrammingturkey.pipes.network.filtering.IFilterStack;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.EnumFacing;
@@ -51,15 +52,15 @@ public class UpdateFilterPacket implements IMessage
 		buf.writeInt(filter.extractFilter.priority);
 		buf.writeBoolean(filter.extractFilter.isWhiteList);
 		buf.writeInt(filter.extractFilter.getStacks().size());
-		for(FilterStack stack : filter.extractFilter.getStacks())
-			ByteBufUtils.writeItemStack(buf, stack.getAsItemStack());
+		for(IFilterStack stack : filter.extractFilter.getStacks())
+			ByteBufUtils.writeTag(buf, stack.serializeNBT());
 
 		buf.writeBoolean(filter.insertFilter.enabled);
 		buf.writeInt(filter.insertFilter.priority);
 		buf.writeBoolean(filter.insertFilter.isWhiteList);
 		buf.writeInt(filter.insertFilter.getStacks().size());
-		for(FilterStack stack : filter.insertFilter.getStacks())
-			ByteBufUtils.writeItemStack(buf, stack.getAsItemStack());
+		for(IFilterStack stack : filter.insertFilter.getStacks())
+			ByteBufUtils.writeTag(buf, stack.serializeNBT());
 	}
 
 	@Override
@@ -73,15 +74,16 @@ public class UpdateFilterPacket implements IMessage
 		filter.extractFilter.priority = buf.readInt();
 		filter.extractFilter.isWhiteList = buf.readBoolean();
 		int amount = buf.readInt();
+		//TODO: Don't use FilterStackItem
 		for(int i = 0; i < amount; i++)
-			filter.extractFilter.addStackToFilter(new FilterStack(ByteBufUtils.readItemStack(buf)));
+			filter.extractFilter.addStackToFilter(new FilterStackItem(ByteBufUtils.readItemStack(buf)));
 
 		filter.insertFilter.enabled = buf.readBoolean();
 		filter.insertFilter.priority = buf.readInt();
 		filter.insertFilter.isWhiteList = buf.readBoolean();
 		amount = buf.readInt();
 		for(int i = 0; i < amount; i++)
-			filter.insertFilter.addStackToFilter(new FilterStack(ByteBufUtils.readItemStack(buf)));
+			filter.insertFilter.addStackToFilter(new FilterStackItem(ByteBufUtils.readItemStack(buf)));
 	}
 
 	public static final class Handler implements IMessageHandler<UpdateFilterPacket, IMessage>

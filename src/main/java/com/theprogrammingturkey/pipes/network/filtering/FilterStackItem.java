@@ -1,16 +1,18 @@
-package com.theprogrammingturkey.pipes.util;
+package com.theprogrammingturkey.pipes.network.filtering;
+
+import com.theprogrammingturkey.pipes.util.ItemStackHelper;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
-public class FilterStack
+public class FilterStackItem implements IFilterStack
 {
 	public Item item;
 	public int meta;
 	public NBTTagCompound nbt;
 
-	public FilterStack(ItemStack stack)
+	public FilterStackItem(ItemStack stack)
 	{
 		this.item = stack.getItem();
 		this.meta = stack.getItemDamage();
@@ -19,7 +21,7 @@ public class FilterStack
 
 	public boolean equals(Object obj)
 	{
-		if(!(obj instanceof FilterStack))
+		if(!(obj instanceof FilterStackItem))
 			return false;
 
 		return true;
@@ -50,5 +52,28 @@ public class FilterStack
 			toReturn += "NULL";
 
 		return toReturn;
+	}
+
+	@Override
+	public NBTTagCompound serializeNBT()
+	{
+		return this.getAsItemStack().serializeNBT();
+	}
+
+	@Override
+	public boolean isEqual(IFilterStack ifs)
+	{
+		if(!(ifs instanceof FilterStackItem))
+			return false;
+
+		FilterStackItem stack = (FilterStackItem) ifs;
+
+		if(this.item != stack.item)
+			return false;
+
+		if(this.meta != stack.meta)
+			return false;
+
+		return ItemStackHelper.areNBTTagsEqual(this.nbt, stack.nbt);
 	}
 }

@@ -6,9 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.theprogrammingturkey.pipes.network.InterfaceFilter.DirectionFilter;
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
-import com.theprogrammingturkey.pipes.util.FilterStack;
+import com.theprogrammingturkey.pipes.network.filtering.FilterStackItem;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter.DirectionFilter;
+import com.theprogrammingturkey.pipes.util.StackInfo;
 
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -23,7 +24,7 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 
 	public void processTransfers()
 	{
-		Map<FilterStack, List<StackInfo>> avilable = new HashMap<>();
+		Map<FilterStackItem, List<StackInfo<IItemHandler>>> avilable = new HashMap<>();
 
 		//TODO: Should we sort all interfaces? Even ones not configured as both inputs and outputs
 
@@ -40,16 +41,16 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 				ItemStack stack = info.inv.extractItem(i, info.inv.getSlotLimit(i), true);
 				if(stack == null || stack.isEmpty())
 					continue;
-				FilterStack fs = new FilterStack(stack);
+				FilterStackItem fs = new FilterStackItem(stack);
 				if((info.filter.isWhiteList() && info.filter.hasStackInFilter(fs)) || (!info.filter.isWhiteList() && !info.filter.hasStackInFilter(fs)))
 				{
-					List<StackInfo> fsInfo = avilable.get(fs);
+					List<StackInfo<IItemHandler>> fsInfo = avilable.get(fs);
 					if(fsInfo == null)
 					{
-						fsInfo = new ArrayList<StackInfo>();
+						fsInfo = new ArrayList<>();
 						avilable.put(fs, fsInfo);
 					}
-					fsInfo.add(new StackInfo(info.inv, info.filter, i, stack.getCount()));
+					fsInfo.add(new StackInfo<IItemHandler>(info.inv, info.filter, i, stack.getCount()));
 				}
 			}
 		}
@@ -60,20 +61,20 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 			info.filter.setShowInsertFilter(true);
 			if(!info.filter.isEnabled())
 				continue;
-			for(FilterStack stack : avilable.keySet())
+			for(FilterStackItem stack : avilable.keySet())
 			{
 				boolean hasStack = info.filter.hasStackInFilter(stack);
 				if((hasStack && info.filter.isWhiteList()) || (!hasStack && !info.filter.isWhiteList()))
 				{
 					//Inserting into a specific inventory
 					int stackInfoIndex = 0;
-					List<StackInfo> fromStacks = avilable.get(stack);
+					List<StackInfo<IItemHandler>> fromStacks = avilable.get(stack);
 					ItemStack toInsert = null;
 					for(int i = 0; i < info.inv.getSlots(); i++)
 					{
 						for(int j = stackInfoIndex; j < fromStacks.size(); j++)
 						{
-							StackInfo stackInfo = fromStacks.get(j);
+							StackInfo<IItemHandler> stackInfo = fromStacks.get(j);
 							if(stackInfo.amountLeft != 0 && !info.inv.equals(stackInfo.inv) && wontSendBack(info.filter, stackInfo.filter, stack))
 							{
 								toInsert = stack.getAsItemStack();
@@ -99,7 +100,7 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 
 					if(stackInfoIndex != fromStacks.size() && toInsert != null)
 					{
-						StackInfo stackInfo = fromStacks.get(stackInfoIndex);
+						StackInfo<IItemHandler> stackInfo = fromStacks.get(stackInfoIndex);
 						stackInfo.inv.extractItem(stackInfo.slot, stackInfo.amount - toInsert.getCount(), false);
 					}
 				}
@@ -107,7 +108,7 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 		}
 	}
 
-	private boolean wontSendBack(InterfaceFilter toFilter, InterfaceFilter fromFilter, FilterStack stack)
+	private boolean wontSendBack(InterfaceFilter toFilter, InterfaceFilter fromFilter, FilterStackItem stack)
 	{
 		DirectionFilter fromOpposite = fromFilter.insertFilter;
 		DirectionFilter toOpposite = toFilter.extractFilter;
@@ -127,23 +128,5 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 			return true;
 
 		return false;
-	}
-
-	private static class StackInfo
-	{
-		public IItemHandler inv;
-		public int slot;
-		public int amount;
-		public int amountLeft;
-		public InterfaceFilter filter;
-
-		public StackInfo(IItemHandler inv, InterfaceFilter filter, int slot, int amount)
-		{
-			this.inv = inv;
-			this.filter = filter;
-			this.slot = slot;
-			this.amount = amount;
-			this.amountLeft = amount;
-		}
 	}
 }

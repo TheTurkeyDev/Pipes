@@ -2,7 +2,7 @@ package com.theprogrammingturkey.pipes.network;
 
 import java.util.List;
 
-import com.theprogrammingturkey.pipes.network.PipeNetworkManager.NetworkType;
+import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
