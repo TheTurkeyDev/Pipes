@@ -76,4 +76,11 @@ public class FilterStackItem implements IFilterStack
 
 		return ItemStackHelper.areNBTTagsEqual(this.nbt, stack.nbt);
 	}
+
+	@Override
+	public boolean isEmpty()
+	{
+		return item == null;
+	}
+
 }

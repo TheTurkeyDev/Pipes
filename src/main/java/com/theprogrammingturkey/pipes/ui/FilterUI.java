@@ -44,7 +44,7 @@ public class FilterUI extends GuiContainer
 
 	public FilterUI(EntityPlayer player, InterfaceFilter filter, BlockPos pos)
 	{
-		super(new FilterContainer(player.inventory, filter, player));
+		super(new FilterContainer(player.inventory, player));
 		this.pos = pos;
 		this.player = player;
 		this.filter = filter;
@@ -66,8 +66,9 @@ public class FilterUI extends GuiContainer
 		insertButton.enabled = false;
 		this.buttonList.add(extractButton = new GuiButton(1, guiLeft + xSize, guiTop + 20, 50, 20, "Extract"));
 		this.buttonList.add(enabledCheckBox = new GuiCheckBox(2, guiLeft + 10, guiTop + 10, "Enabled", filter.isEnabled()));
+		this.buttonList.add(whitelistButton = new GuiButton(3, guiLeft + 70, guiTop + 5, 50, 20, filter.isWhiteList() ? "Whitelist" : "Blacklist"));
 		if(this.filter.getNetworkType() != NetworkType.ENERGY)
-			this.buttonList.add(whitelistButton = new GuiButton(3, guiLeft + 70, guiTop + 5, 50, 20, filter.isWhiteList() ? "Whitelist" : "Blacklist"));
+			whitelistButton.enabled = false;
 		this.buttonList.add(new GuiButton(4, guiLeft + 175, guiTop + 5, 15, 20, "-"));
 		this.buttonList.add(new GuiButton(5, guiLeft + 230, guiTop + 5, 15, 20, "+"));
 	}
@@ -113,7 +114,7 @@ public class FilterUI extends GuiContainer
 			IFilterStack fs = this.filter.getStacks().get(k);
 			int i = filterX + k * 18;
 			int j = filterY;
-			ItemStack itemstack = fs.getAsItemStack();
+			ItemStack itemstack = ((FilterStackItem) fs).getAsItemStack();
 			String s = null;
 
 			this.zLevel = 100.0F;
@@ -152,7 +153,7 @@ public class FilterUI extends GuiContainer
 				if(!this.filter.hasStackInFilter(fs))
 					this.filter.getStacks().set(slot, fs);
 			}
-			else if(this.filter.getStacks().get(slot) != null && this.filter.getStacks().get(slot).item != null)
+			else if(this.filter.getStacks().get(slot) != null && !this.filter.getStacks().get(slot).isEmpty())
 			{
 				this.filter.getStacks().set(slot, new FilterStackItem(ItemStack.EMPTY));
 			}

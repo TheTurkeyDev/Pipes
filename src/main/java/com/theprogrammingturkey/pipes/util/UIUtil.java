@@ -18,7 +18,7 @@ public class UIUtil
 		player.closeContainer();
 		int id = player.currentWindowId;
 		PipesPacketHandler.INSTANCE.sendTo(new RecieveFilterPacket(pos, filter, id), player);
-		player.openContainer = new FilterContainer(player.inventory, filter, player);
+		player.openContainer = new FilterContainer(player.inventory, player);
 		player.openContainer.windowId = id;
 		player.openContainer.addListener(player);
 	}

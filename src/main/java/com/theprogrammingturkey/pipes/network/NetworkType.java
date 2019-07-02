@@ -37,7 +37,7 @@ public enum NetworkType
 		else if(this == NetworkType.ENERGY)
 			return state.getBlock().equals(RegistryHelper.ENERGY_PIPE);
 		else if(this == NetworkType.ENTITY)
-			return state.getBlock().equals(RegistryHelper.ENTITY_PIPE);
+			return state.getBlock().equals(RegistryHelper.ENTITY_PIPE) || state.getBlock().equals(RegistryHelper.ENTITY_PLACER) || state.getBlock().equals(RegistryHelper.ENTITY_VACUUM);
 		return false;
 	}
 }

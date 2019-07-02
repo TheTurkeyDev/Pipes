@@ -50,7 +50,7 @@ public class ItemPipeNetwork extends PipeNetwork<IItemHandler>
 						fsInfo = new ArrayList<>();
 						avilable.put(fs, fsInfo);
 					}
-					fsInfo.add(new StackInfo<IItemHandler>(info.inv, info.filter, i, stack.getCount()));
+					fsInfo.add(new StackInfo<IItemHandler>(info.inv, info.filter, stack.getCount(), i));
 				}
 			}
 		}

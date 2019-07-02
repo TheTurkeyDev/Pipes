@@ -28,6 +28,7 @@ public class CapabilityEntityHolder
 			{
 
 			}
-		}, () -> new EntityHolder());
+		}, () -> new EntityBlockWrapper(null, null));
+		//TODO: Fix this. this is bad
 	}
 }

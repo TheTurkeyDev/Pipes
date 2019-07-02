@@ -4,8 +4,9 @@ import net.minecraft.nbt.NBTTagCompound;
 
 public interface IFilterStack
 {
-
 	public NBTTagCompound serializeNBT();
 
 	public boolean isEqual(IFilterStack ifs);
+	
+	public boolean isEmpty();
 }

@@ -9,7 +9,6 @@ import java.util.Map;
 import com.theprogrammingturkey.pipes.capabilities.CapabilityEntityHolder;
 import com.theprogrammingturkey.pipes.capabilities.IEntityHolder;
 import com.theprogrammingturkey.pipes.network.filtering.FilterStackEntity;
-import com.theprogrammingturkey.pipes.network.filtering.FilterStackItem;
 import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter.DirectionFilter;
 import com.theprogrammingturkey.pipes.util.StackInfo;
@@ -39,16 +38,27 @@ public class EntityPipeNetwork extends PipeNetwork<IEntityHolder>
 			if(!info.filter.isEnabled())
 				continue;
 
-			List<Entity> ents = info.inv.suckupEntities(true);
+			List<Entity> ents = info.inv.suckupEntities(new ArrayList<Entity>(), true);
 
 			for(Entity ent : ents)
 			{
-				List<StackInfo<IEntityHolder>> fsInfo = avilable.get(ent.getClass());
-				if(fsInfo == null)
+				FilterStackEntity toCheck = new FilterStackEntity(ent);
+				FilterStackEntity entStack = null;
+				for(FilterStackEntity fse : avilable.keySet())
+					if(fse.isEqual(toCheck))
+						entStack = fse;
+
+				List<StackInfo<IEntityHolder>> fsInfo;
+				if(entStack == null)
 				{
 					fsInfo = new ArrayList<StackInfo<IEntityHolder>>();
-					avilable.put(ent.getClass(), fsInfo);
+					avilable.put(new FilterStackEntity(ent), fsInfo);
 				}
+				else
+				{
+					fsInfo = avilable.get(entStack);
+				}
+
 				fsInfo.add(new StackInfo<IEntityHolder>(info.inv, info.filter, 1));
 			}
 		}
@@ -72,13 +82,9 @@ public class EntityPipeNetwork extends PipeNetwork<IEntityHolder>
 						StackInfo<IEntityHolder> stackInfo = fromStacks.get(j);
 						if(stackInfo.amountLeft != 0 && !info.inv.equals(stackInfo.inv) && wontSendBack(info.filter, stackInfo.filter, stack))
 						{
-							List<Entity> shootout = info.inv.shootoutEntities(ents, false);
-							if(amonutUsed != 0)
-							{
-								stackInfo.amountLeft -= amonutUsed;
-								if(stackInfo.amountLeft == 0)
-									stackInfo.inv.drain(stackInfo.amount, true);
-							}
+							boolean worked = info.inv.shootoutEntity(stack.getAsEntity(), false);
+							if(worked)
+								stackInfo.inv.suckupEntity(stack.getAsEntity(), false);
 						}
 					}
 				}

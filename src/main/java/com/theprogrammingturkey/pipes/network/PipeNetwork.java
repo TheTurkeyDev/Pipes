@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.theprogrammingturkey.pipes.capabilities.EntityUtil;
+import com.theprogrammingturkey.pipes.capabilities.IEntityHolder;
 import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
 import com.theprogrammingturkey.pipes.util.Util;
 
@@ -250,6 +252,12 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 				if(handler != null)
 					this.toUpdate.add((HandlerHolder<T>) new HandlerHolder<IFluidHandler>(handler, world, pos, facing, filter, false, 0));
 			}
+			else if(this.type == NetworkType.ENTITY)
+			{
+				IEntityHolder handler = EntityUtil.getEntityBlockHandler(world, offsetPos);
+				if(handler != null)
+					this.toUpdate.add((HandlerHolder<T>) new HandlerHolder<IEntityHolder>(handler, world, pos, facing, filter, false, 0));
+			}
 		}
 	}
 
@@ -284,6 +292,12 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 					this.toUpdate.add((HandlerHolder<T>) new HandlerHolder<IFluidHandler>(handler, world, pos, facing, filter, false, 0));
 					flag = false;
 				}
+			}
+			else if(this.type == NetworkType.ENTITY)
+			{
+				IEntityHolder handler = EntityUtil.getEntityBlockHandler(world, offsetPos);
+				if(handler != null)
+					this.toUpdate.add((HandlerHolder<T>) new HandlerHolder<IEntityHolder>(handler, world, pos, facing, filter, false, 0));
 			}
 
 			if(flag)
@@ -459,6 +473,8 @@ public abstract class PipeNetwork<T> implements IPipeNetwork
 				return new FluidPipeNetwork(networkID, dimID);
 			case ENERGY:
 				return new EnergyPipeNetwork(networkID, dimID);
+			case ENTITY:
+				return new EntityPipeNetwork(networkID, dimID);
 			default:
 				return new ItemPipeNetwork(networkID, dimID);
 		}

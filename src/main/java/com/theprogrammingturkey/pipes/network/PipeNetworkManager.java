@@ -20,6 +20,7 @@ public class PipeNetworkManager
 		NETWORK_MANAGERS.put(NetworkType.ITEM, new PipeNetworkManager(NetworkType.ITEM));
 		NETWORK_MANAGERS.put(NetworkType.FLUID, new PipeNetworkManager(NetworkType.FLUID));
 		NETWORK_MANAGERS.put(NetworkType.ENERGY, new PipeNetworkManager(NetworkType.ENERGY));
+		NETWORK_MANAGERS.put(NetworkType.ENTITY, new PipeNetworkManager(NetworkType.ENTITY));
 	}
 
 	public static List<IPipeNetwork> getNetworksAtPos(BlockPos pos, int dimID)

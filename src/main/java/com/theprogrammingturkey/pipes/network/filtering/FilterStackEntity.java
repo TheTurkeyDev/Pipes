@@ -34,4 +34,9 @@ public class FilterStackEntity implements IFilterStack
 		return ent;
 	}
 
+	@Override
+	public boolean isEmpty()
+	{
+		return ent == null;
+	}
 }

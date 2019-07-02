@@ -1,0 +1,120 @@
+{
+    "multipart": [
+        {
+            "when": {
+                "north": "pipe"
+            },
+            "apply": {
+                "model": "pipes:fluid_pipe_connect"
+            }
+        },
+        {
+            "when": {
+                "south": "pipe"
+            },
+            "apply": {
+                "model": "pipes:fluid_pipe_connect",
+                "y": 180,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "west": "pipe"
+            },
+            "apply": {
+                "model": "pipes:fluid_pipe_connect",
+                "y": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "east": "pipe"
+            },
+            "apply": {
+                "model": "pipes:fluid_pipe_connect",
+                "y": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "up": "pipe"
+            },
+            "apply": {
+                "model": "pipes:fluid_pipe_connect",
+                "x": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "down": "pipe"
+            },
+            "apply": {
+                "model": "pipes:fluid_pipe_connect",
+                "x": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "north"
+            },
+            "apply": {
+                "model": "pipes:entity_vacuum"
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "south"
+            },
+            "apply": {
+                "model": "pipes:entity_vacuum",
+                "y": 180,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "west"
+            },
+            "apply": {
+                "model": "pipes:entity_vacuum",
+                "y": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "east"
+            },
+            "apply": {
+                "model": "pipes:entity_vacuum",
+                "y": 90,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "up"
+            },
+            "apply": {
+                "model": "pipes:entity_vacuum",
+                "x": 270,
+                "uvlock": true
+            }
+        },
+        {
+            "when": {
+                "pump_facing": "down"
+            },
+            "apply": {
+                "model": "pipes:entity_vacuum",
+                "x": 90,
+                "uvlock": true
+            }
+        }
+    ]
+}

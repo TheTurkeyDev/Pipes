@@ -1,7 +1,5 @@
 package com.theprogrammingturkey.pipes.containers;
 
-import com.theprogrammingturkey.pipes.network.filtering.InterfaceFilter;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
@@ -10,12 +8,10 @@ import net.minecraft.item.ItemStack;
 
 public class FilterContainer extends Container
 {
-	private final InterfaceFilter filter;
 	private final int numRows;
 
-	public FilterContainer(IInventory playerInventory, InterfaceFilter filter, EntityPlayer player)
+	public FilterContainer(IInventory playerInventory, EntityPlayer player)
 	{
-		this.filter = filter;
 		this.numRows = 1;
 		int i = (this.numRows - 4) * 18;
 

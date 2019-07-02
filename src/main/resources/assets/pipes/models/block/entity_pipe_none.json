@@ -1,0 +1,7 @@
+{
+	"parent": "pipes:block/pipe_none",
+	"textures": {
+		"texture": "pipes:blocks/entity_pipe",
+		"particle": "pipes:blocks/entity_pipe"
+    }
+}
